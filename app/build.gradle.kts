@@ -45,4 +45,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     implementation("com.android.volley:volley:1.2.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("com.google.android.material:material:1.12.0")
 }

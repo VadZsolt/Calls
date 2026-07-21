@@ -1,10 +1,14 @@
 package com.example.calls.adapters
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calls.R
@@ -20,6 +24,7 @@ class CallsAdapter(private val calls: List<Calls>) :
         val tvDate: TextView = itemView.findViewById(R.id.tvDate)
         val tvType: TextView = itemView.findViewById(R.id.tvType)
         val tvUploader: TextView = itemView.findViewById(R.id.tvUploader)
+        val cardCall: CardView = itemView.findViewById(R.id.cardCall)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CallViewHolder {
@@ -48,6 +53,32 @@ class CallsAdapter(private val calls: List<Calls>) :
         holder.container.setBackgroundColor(
             ContextCompat.getColor(holder.container.context, colorRes)
         )
+        holder.cardCall.setCardBackgroundColor(
+            ContextCompat.getColorStateList(holder.cardCall.context, colorRes)
+        )
+        holder.container.setOnClickListener { view ->
+            view.animate()
+                .scaleX(0.95f)
+                .scaleY(0.95f)
+                .setDuration(100)
+                .withEndAction {
+                    view.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(100)
+                        .withEndAction {
+                            val rawNumber = call.Number?.removePrefix("'") ?: return@withEndAction
+
+                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:$rawNumber")
+                            }
+
+                            view.context.startActivity(intent)
+                        }
+                        .start()
+                }
+                .start()
+        }
     }
 
     override fun getItemCount(): Int = calls.size
