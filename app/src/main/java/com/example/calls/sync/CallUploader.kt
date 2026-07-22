@@ -9,6 +9,7 @@ import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.example.calls.R
 import com.example.calls.data.SyncPreferences
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -30,7 +31,7 @@ class CallUploader(private val context: Context) {
 
     private val requestQueue: RequestQueue = Volley.newRequestQueue(context)
     private val INITIAL_FALLBACK_DAYS = 3
-    private val url = "https://script.google.com/macros/s/AKfycbyyorwcDipj7qLs72YLZnpsRpinfSCJlpHAQUKlLLuHM_ChY71sVjsYLsq86ZDsJM3P/exec"
+    private val url = context.getString(R.string.script_url)
 
     data class CallLogEntry(
         val name: String,

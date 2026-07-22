@@ -41,8 +41,7 @@ class ReadActivity : AppCompatActivity() {
         val calls = arrayListOf<Calls>()
 
         val queue = Volley.newRequestQueue(this)
-        val url =
-            "https://script.google.com/macros/s/AKfycbyyorwcDipj7qLs72YLZnpsRpinfSCJlpHAQUKlLLuHM_ChY71sVjsYLsq86ZDsJM3P/exec"
+        val url = getString(R.string.script_url)
 
         val jsonObjectRequest = object : JsonObjectRequest(
             Request.Method.GET, url, null,

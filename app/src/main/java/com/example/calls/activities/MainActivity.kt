@@ -36,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnResetSim: TextView
     lateinit var btnResetName: TextView
 
+    lateinit var btnReadByDate: Button
+
     lateinit var switchAutoSync: SwitchMaterial
     lateinit var tvSyncStatus: TextView
     lateinit var syncStatusDot: View
@@ -52,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         btnWrite = findViewById(R.id.btnWrite)
         btnResetSim = findViewById(R.id.btnResetSim)
         btnResetName = findViewById(R.id.btnResetName)
+        btnReadByDate = findViewById(R.id.btnReadbyDate)
 
         switchAutoSync = findViewById(R.id.switchAutoSync)
         tvSyncStatus = findViewById(R.id.tvSyncStatus)
@@ -69,6 +72,9 @@ class MainActivity : AppCompatActivity() {
         }
         btnResetName.setOnClickListener {
             resetUploaderName()
+        }
+        btnReadByDate.setOnClickListener {
+            startActivity(Intent(this, ReadByDateActivity::class.java))
         }
 
         switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
