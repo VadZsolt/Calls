@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnWrite: Button
     lateinit var btnResetSim: TextView
     lateinit var btnResetName: TextView
-
     lateinit var btnReadByDate: Button
 
     lateinit var switchAutoSync: SwitchMaterial
@@ -43,8 +42,22 @@ class MainActivity : AppCompatActivity() {
     lateinit var syncStatusDot: View
     lateinit var lastUpload: TextView
 
-    private val PHONE_STATE_PERMISSION_CODE = 200
+    private val ALL_PERMISSIONS_CODE = 500
     private var isPromptShowing = false
+
+    private val allRequiredPermissions: Array<String>
+        get() {
+            val perms = mutableListOf(
+                android.Manifest.permission.READ_PHONE_STATE,
+                android.Manifest.permission.READ_PHONE_NUMBERS,
+                android.Manifest.permission.READ_CONTACTS,
+                android.Manifest.permission.READ_CALL_LOG
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                perms.add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+            return perms.toTypedArray()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,24 +92,20 @@ class MainActivity : AppCompatActivity() {
 
         switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                requestNotificationPermissionIfNeeded()
                 startSyncService()
             } else {
                 stopSyncService()
             }
         }
 
-        // Reactive: updates status text, switch, and dot the instant the real state changes
         CallSyncService.isRunning
             .onEach { running ->
                 tvSyncStatus.text = if (running) "Auto-sync: Running" else "Auto-sync: Stopped"
-
                 if (switchAutoSync.isChecked != running) {
                     switchAutoSync.setOnCheckedChangeListener(null)
                     switchAutoSync.isChecked = running
                     switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
                         if (isChecked) {
-                            requestNotificationPermissionIfNeeded()
                             startSyncService()
                         } else {
                             stopSyncService()
@@ -110,11 +119,13 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             .launchIn(lifecycleScope)
+
+        // Onboarding: Name -> SIM -> all permissions in one shot
+        checkUploaderName()
     }
 
     override fun onResume() {
         super.onResume()
-        checkUploaderName()
         updateLastUploadText()
     }
 
@@ -134,11 +145,13 @@ class MainActivity : AppCompatActivity() {
         return sdf.format(Date(millis))
     }
 
+    // ---------- Reset actions ----------
+
     private fun resetSimSelection() {
         lifecycleScope.launch {
             SyncPreferences.setSimAccountId(this@MainActivity, "")
             Toast.makeText(this@MainActivity, "SIM selection reset", Toast.LENGTH_SHORT).show()
-            checkPhoneStatePermissionAndPromptSim()
+            checkAllPermissionsThenPromptSim()
         }
     }
 
@@ -149,6 +162,8 @@ class MainActivity : AppCompatActivity() {
             checkUploaderName()
         }
     }
+
+    // ---------- Onboarding chain: step 1 - Name ----------
 
     private fun checkUploaderName() {
         if (isPromptShowing) return
@@ -192,37 +207,29 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    // ---------- Onboarding chain: step 2 - permissions, then SIM selection ----------
+
     private fun checkSimSelection() {
         if (isPromptShowing) return
 
         lifecycleScope.launch {
             val savedAccountId = SyncPreferences.getSimAccountId(this@MainActivity).first()
             if (savedAccountId.isNullOrBlank()) {
-                checkPhoneStatePermissionAndPromptSim()
+                checkAllPermissionsThenPromptSim()
             }
         }
     }
 
-    private fun checkPhoneStatePermissionAndPromptSim() {
-        val phoneStateGranted = ContextCompat.checkSelfPermission(
-            this, android.Manifest.permission.READ_PHONE_STATE
-        ) == PackageManager.PERMISSION_GRANTED
+    /** Requests ALL required permissions in a single dialog, then shows the SIM picker once granted (or denied). */
+    private fun checkAllPermissionsThenPromptSim() {
+        val missing = allRequiredPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
 
-        val phoneNumbersGranted = ContextCompat.checkSelfPermission(
-            this, android.Manifest.permission.READ_PHONE_NUMBERS
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (phoneStateGranted && phoneNumbersGranted) {
+        if (missing.isEmpty()) {
             showSimPrompt()
         } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    android.Manifest.permission.READ_PHONE_STATE,
-                    android.Manifest.permission.READ_PHONE_NUMBERS
-                ),
-                PHONE_STATE_PERMISSION_CODE
-            )
+            ActivityCompat.requestPermissions(this, missing.toTypedArray(), ALL_PERMISSIONS_CODE)
         }
     }
 
@@ -230,13 +237,19 @@ class MainActivity : AppCompatActivity() {
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PHONE_STATE_PERMISSION_CODE) {
+
+        if (requestCode == ALL_PERMISSIONS_CODE) {
             val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            if (allGranted) {
-                showSimPrompt()
-            } else {
-                Toast.makeText(this, "Phone permissions are required to select a SIM", Toast.LENGTH_SHORT).show()
+            if (!allGranted) {
+                Toast.makeText(
+                    this,
+                    "Some permissions were denied — call sync, SIM detection, or notifications may not work correctly",
+                    Toast.LENGTH_LONG
+                ).show()
             }
+            // Continue to SIM picker regardless — it has its own SecurityException guard
+            // in case READ_PHONE_STATE/READ_PHONE_NUMBERS specifically were denied.
+            showSimPrompt()
         }
     }
 
@@ -283,6 +296,8 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    // ---------- Service control ----------
+
     private fun startSyncService() {
         val intent = Intent(this, CallSyncService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -295,16 +310,5 @@ class MainActivity : AppCompatActivity() {
     private fun stopSyncService() {
         val intent = Intent(this, CallSyncService::class.java)
         stopService(intent)
-    }
-
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 300
-                )
-            }
-        }
     }
 }

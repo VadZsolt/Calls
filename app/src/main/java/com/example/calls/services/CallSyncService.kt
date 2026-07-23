@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.calls.R
+import com.example.calls.data.SyncPreferences
 import com.example.calls.sync.CallUploader
 import com.example.calls.sync.SyncResult
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +24,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class CallSyncService : Service() {
 
@@ -94,8 +99,12 @@ class CallSyncService : Service() {
     private fun triggerSync() {
         serviceScope.launch {
             when (val result = callUploader.syncNow()) {
-                is SyncResult.Success -> updateNotification("Last sync: uploaded ${result.count} call(s)")
-                is SyncResult.PartialFailure -> updateNotification("Uploaded ${result.uploaded}, then lost connection")
+                is SyncResult.Success -> updateNotification("Last sync: ${formatMillis(SyncPreferences.getLastSyncMillis(this@CallSyncService).first())}")
+                is SyncResult.PartialFailure -> updateNotification("Last sync: ${
+                    formatMillis(
+                        SyncPreferences.getLastSyncMillis(this@CallSyncService).first()
+                    )
+                }, then lost connection")
                 SyncResult.NetworkFailure -> updateNotification("Sync failed — no connection")
                 SyncResult.NoSimSelected -> updateNotification("No SIM selected")
                 SyncResult.NoNewCalls -> { /* nothing changed, leave notification as-is */ }
@@ -157,5 +166,9 @@ class CallSyncService : Service() {
         lastNotificationText = text
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, buildNotification(text))
+    }
+    private fun formatMillis(millis: Long): String {
+        val sdf = SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault())
+        return sdf.format(Date(millis))
     }
 }
