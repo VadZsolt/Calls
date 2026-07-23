@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Calls</string>
     <string name="script_url">https://script.google.com/macros/s/AKfycbyTEz53pwPxG_pYuK7H6ueZoI8n5fVB9O7da2ZdCYQjTLB4bnRy_hsyJ5gePIxCKhAg/exec</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

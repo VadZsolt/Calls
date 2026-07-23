@@ -15,4 +15,7 @@
     <color name="call_rejected">#FF9800</color>
     <color name="call_voicemail">#9C27B0</color>
     <color name="call_default">#757575</color>
+
+    <color name="navBackground">#F5F5F5</color>
+    <color name="navHeaderBackground">#E8E8E8</color>
 </resources>

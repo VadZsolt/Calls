@@ -2,45 +2,36 @@ package com.example.calls.activities
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.telephony.SubscriptionManager
-import android.view.View
-import android.widget.Button
+import android.view.Gravity
 import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.calls.R
 import com.example.calls.data.SyncPreferences
-import com.example.calls.services.CallSyncService
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.example.calls.fragments.CallsFragment
+import com.example.calls.fragments.MainFragment
+import com.example.calls.fragments.SettingsFragment
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var btnRead: Button
-    lateinit var btnWrite: Button
-    lateinit var btnResetSim: TextView
-    lateinit var btnResetName: TextView
-    lateinit var btnReadByDate: Button
-
-    lateinit var switchAutoSync: SwitchMaterial
-    lateinit var tvSyncStatus: TextView
-    lateinit var syncStatusDot: View
-    lateinit var lastUpload: TextView
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
+    private lateinit var toolbar: MaterialToolbar
 
     private val ALL_PERMISSIONS_CODE = 500
     private var isPromptShowing = false
@@ -53,7 +44,7 @@ class MainActivity : AppCompatActivity() {
                 android.Manifest.permission.READ_CONTACTS,
                 android.Manifest.permission.READ_CALL_LOG
             )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 perms.add(android.Manifest.permission.POST_NOTIFICATIONS)
             }
             return perms.toTypedArray()
@@ -61,109 +52,54 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        btnRead = findViewById(R.id.btnRead)
-        btnWrite = findViewById(R.id.btnWrite)
-        btnResetSim = findViewById(R.id.btnResetSim)
-        btnResetName = findViewById(R.id.btnResetName)
-        btnReadByDate = findViewById(R.id.btnReadbyDate)
+        drawerLayout = findViewById(R.id.drawerLayout)
+        navView = findViewById(R.id.navView)
+        toolbar = findViewById(R.id.toolbar)
 
-        switchAutoSync = findViewById(R.id.switchAutoSync)
-        tvSyncStatus = findViewById(R.id.tvSyncStatus)
-        syncStatusDot = findViewById(R.id.syncStatusDot)
-        lastUpload = findViewById(R.id.lastUpload)
-
-        btnRead.setOnClickListener {
-            startActivity(Intent(this, ReadActivity::class.java))
-        }
-        btnWrite.setOnClickListener {
-            startActivity(Intent(this, WriteActivity::class.java))
-        }
-        btnResetSim.setOnClickListener {
-            resetSimSelection()
-        }
-        btnResetName.setOnClickListener {
-            resetUploaderName()
-        }
-        btnReadByDate.setOnClickListener {
-            startActivity(Intent(this, ReadByDateActivity::class.java))
+        toolbar.setNavigationOnClickListener {
+            drawerLayout.openDrawer(Gravity.START)
         }
 
-        switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                startSyncService()
-            } else {
-                stopSyncService()
+        navView.setNavigationItemSelectedListener { menuItem ->
+            val fragment = when (menuItem.itemId) {
+                R.id.nav_main -> MainFragment()
+                R.id.nav_calls -> CallsFragment()
+                R.id.nav_settings -> SettingsFragment()
+                else -> MainFragment()
             }
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit()
+            toolbar.title = menuItem.title
+            drawerLayout.closeDrawer(Gravity.START)
+            true
         }
 
-        CallSyncService.isRunning
-            .onEach { running ->
-                tvSyncStatus.text = if (running) "Auto-sync: Running" else "Auto-sync: Stopped"
-                if (switchAutoSync.isChecked != running) {
-                    switchAutoSync.setOnCheckedChangeListener(null)
-                    switchAutoSync.isChecked = running
-                    switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
-                        if (isChecked) {
-                            startSyncService()
-                        } else {
-                            stopSyncService()
-                        }
-                    }
-                }
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, MainFragment())
+                .commit()
+            navView.setCheckedItem(R.id.nav_main)
+            toolbar.title = "Home"
+        }
 
-                syncStatusDot.backgroundTintList = ContextCompat.getColorStateList(
-                    this,
-                    if (running) R.color.call_incoming else R.color.call_missed
-                )
-            }
-            .launchIn(lifecycleScope)
-
-        // Onboarding: Name -> SIM -> all permissions in one shot
         checkUploaderName()
     }
 
-    override fun onResume() {
-        super.onResume()
-        updateLastUploadText()
+    // ---------- Called from SettingsFragment after a reset ----------
+
+    fun reshowSimPicker() {
+        checkAllPermissionsThenPromptSim()
     }
 
-    private fun updateLastUploadText() {
-        lifecycleScope.launch {
-            val lastSyncMillis = SyncPreferences.getLastSyncMillis(this@MainActivity).first()
-            lastUpload.text = if (lastSyncMillis > 0L) {
-                "Last Uploaded Date: ${formatMillis(lastSyncMillis)}"
-            } else {
-                "Last Uploaded Date: Never"
-            }
-        }
+    fun reshowNamePrompt() {
+        checkUploaderName()
     }
 
-    private fun formatMillis(millis: Long): String {
-        val sdf = SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault())
-        return sdf.format(Date(millis))
-    }
-
-    // ---------- Reset actions ----------
-
-    private fun resetSimSelection() {
-        lifecycleScope.launch {
-            SyncPreferences.setSimAccountId(this@MainActivity, "")
-            Toast.makeText(this@MainActivity, "SIM selection reset", Toast.LENGTH_SHORT).show()
-            checkAllPermissionsThenPromptSim()
-        }
-    }
-
-    private fun resetUploaderName() {
-        lifecycleScope.launch {
-            SyncPreferences.setUploaderName(this@MainActivity, "")
-            Toast.makeText(this@MainActivity, "Uploader name reset", Toast.LENGTH_SHORT).show()
-            checkUploaderName()
-        }
-    }
-
-    // ---------- Onboarding chain: step 1 - Name ----------
+    // ---------- Onboarding chain ----------
 
     private fun checkUploaderName() {
         if (isPromptShowing) return
@@ -207,8 +143,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- Onboarding chain: step 2 - permissions, then SIM selection ----------
-
     private fun checkSimSelection() {
         if (isPromptShowing) return
 
@@ -220,7 +154,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Requests ALL required permissions in a single dialog, then shows the SIM picker once granted (or denied). */
     private fun checkAllPermissionsThenPromptSim() {
         val missing = allRequiredPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
@@ -229,7 +162,7 @@ class MainActivity : AppCompatActivity() {
         if (missing.isEmpty()) {
             showSimPrompt()
         } else {
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), ALL_PERMISSIONS_CODE)
+            androidx.core.app.ActivityCompat.requestPermissions(this, missing.toTypedArray(), ALL_PERMISSIONS_CODE)
         }
     }
 
@@ -247,8 +180,6 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             }
-            // Continue to SIM picker regardless — it has its own SecurityException guard
-            // in case READ_PHONE_STATE/READ_PHONE_NUMBERS specifically were denied.
             showSimPrompt()
         }
     }
@@ -280,12 +211,7 @@ class MainActivity : AppCompatActivity() {
             .setCancelable(false)
             .setItems(labels) { _, which ->
                 val selectedSim = subscriptions[which]
-
-                val iccId = selectedSim.iccId ?: ""
-                val subId = selectedSim.subscriptionId.toString()
-                val slotIndex = selectedSim.simSlotIndex.toString()
-
-                val storedValue = "$iccId|$subId|$slotIndex"
+                val storedValue = "${selectedSim.iccId ?: ""}|${selectedSim.subscriptionId}|${selectedSim.simSlotIndex}"
 
                 lifecycleScope.launch {
                     SyncPreferences.setSimAccountId(this@MainActivity, storedValue)
@@ -294,21 +220,5 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .show()
-    }
-
-    // ---------- Service control ----------
-
-    private fun startSyncService() {
-        val intent = Intent(this, CallSyncService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
-    }
-
-    private fun stopSyncService() {
-        val intent = Intent(this, CallSyncService::class.java)
-        stopService(intent)
     }
 }
