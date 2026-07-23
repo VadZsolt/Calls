@@ -26,6 +26,7 @@
                 android:text="Write to Drive"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                app:icon="@android:drawable/ic_menu_upload"
                 app:cornerRadius="12dp"/>
 
             <Button
@@ -37,6 +38,7 @@
                 android:text="Read from Drive"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                app:icon="@android:drawable/ic_menu_view"
                 app:cornerRadius="12dp"/>
 
             <Button
@@ -48,6 +50,7 @@
                 android:text="Read by Date"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                app:icon="@android:drawable/ic_menu_my_calendar"
                 app:cornerRadius="12dp"/>
 
         </LinearLayout>
