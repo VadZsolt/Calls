@@ -14,6 +14,8 @@ import com.example.calls.services.CallSyncService
 import com.google.android.material.switchmaterial.SwitchMaterial
 import android.widget.TextView
 import android.content.Intent
+import android.widget.FrameLayout
+import android.widget.ImageView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -28,14 +30,20 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private lateinit var tvSyncStatus: TextView
     private lateinit var syncStatusDot: View
     private lateinit var lastUpload: TextView
+    private lateinit var syncStatusIconBg: FrameLayout
+    private lateinit var syncStatusIcon: ImageView
+    private lateinit var tvSyncSubtitle: TextView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         switchAutoSync = view.findViewById(R.id.switchAutoSync)
         tvSyncStatus = view.findViewById(R.id.tvSyncStatus)
-        syncStatusDot = view.findViewById(R.id.syncStatusDot)
         lastUpload = view.findViewById(R.id.lastUpload)
+
+        syncStatusIconBg = view.findViewById(R.id.syncStatusIconBg)
+        syncStatusIcon = view.findViewById(R.id.syncStatusIcon)
+        tvSyncSubtitle = view.findViewById(R.id.tvSyncSubtitle)
 
         switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) startSyncService() else stopSyncService()
@@ -44,6 +52,20 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         CallSyncService.isRunning
             .onEach { running ->
                 tvSyncStatus.text = if (running) "Auto-sync: Running" else "Auto-sync: Stopped"
+                tvSyncSubtitle.text = if (running) {
+                    "Watching for new calls in the background"
+                } else {
+                    "Turn on to automatically upload new calls"
+                }
+
+                syncStatusIconBg.backgroundTintList = ContextCompat.getColorStateList(
+                    requireContext(),
+                    if (running) R.color.call_incoming else R.color.call_missed
+                )
+
+                syncStatusIcon.setImageResource(
+                    if (running) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
+                )
 
                 if (switchAutoSync.isChecked != running) {
                     switchAutoSync.setOnCheckedChangeListener(null)
@@ -52,15 +74,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         if (isChecked) startSyncService() else stopSyncService()
                     }
                 }
-
-                syncStatusDot.backgroundTintList = ContextCompat.getColorStateList(
-                    requireContext(),
-                    if (running) R.color.call_incoming else R.color.call_missed
-                )
             }
             .launchIn(viewLifecycleOwner.lifecycleScope)
-
-        updateLastUploadText()
     }
 
     override fun onResume() {

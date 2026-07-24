@@ -16,11 +16,13 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/background"
-            android:title="Call Sync"
+            android:layout_height="64dp"
+            android:background="@color/backgroundMenu"
             android:titleTextColor="@color/black"
-            app:navigationIcon="@drawable/ic_menu_hamburger" />
+            android:elevation="8dp"
+            app:titleTextAppearance="@style/ToolbarTitleText"
+            app:navigationIcon="@drawable/ic_menu_hamburger"
+            app:navigationIconTint="@color/black" />
 
         <FrameLayout
             android:id="@+id/fragmentContainer"

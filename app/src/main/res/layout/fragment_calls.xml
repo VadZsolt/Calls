@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
-        android:gravity="center_vertical">
+        android:layout_marginTop="60dp">
 
         <!-- Write to Drive -->
         <com.google.android.material.card.MaterialCardView
