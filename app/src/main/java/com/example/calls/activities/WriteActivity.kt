@@ -3,7 +3,6 @@ package com.example.calls.activities
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -17,6 +16,7 @@ import com.example.calls.R
 import com.example.calls.data.SyncPreferences
 import com.example.calls.sync.CallUploader
 import com.example.calls.sync.SyncResult
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -27,7 +27,7 @@ class WriteActivity : AppCompatActivity() {
 
     lateinit var writeProgressLayout: RelativeLayout
     lateinit var writeProgressBar: ProgressBar
-    lateinit var btnSaveDrive: Button
+    lateinit var btnSaveDrive: MaterialButton
     lateinit var lastUpload: TextView
 
     private lateinit var callUploader: CallUploader
