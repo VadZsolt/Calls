@@ -15,13 +15,13 @@ class CallsFragment : Fragment(R.layout.fragment_calls) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<Button>(R.id.btnWrite).setOnClickListener {
+        view.findViewById<View>(R.id.btnWrite).setOnClickListener {
             startActivity(Intent(requireContext(), WriteActivity::class.java))
         }
-        view.findViewById<Button>(R.id.btnRead).setOnClickListener {
+        view.findViewById<View>(R.id.btnRead).setOnClickListener {
             startActivity(Intent(requireContext(), ReadActivity::class.java))
         }
-        view.findViewById<Button>(R.id.btnReadByDate).setOnClickListener {
+        view.findViewById<View>(R.id.btnReadByDate).setOnClickListener {
             startActivity(Intent(requireContext(), ReadByDateActivity::class.java))
         }
     }
