@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calls.R
 import com.example.calls.models.Contact
+import com.example.calls.utils.bindNames
 
 class ContactsAdapter(private val contacts: List<Contact>) :
     RecyclerView.Adapter<ContactsAdapter.ContactViewHolder>() {
@@ -18,6 +19,7 @@ class ContactsAdapter(private val contacts: List<Contact>) :
         val container: LinearLayout = itemView.findViewById(R.id.contactItemContainer)
         val tvName: TextView = itemView.findViewById(R.id.tvContactName)
         val tvNumber: TextView = itemView.findViewById(R.id.tvContactNumber)
+        val tvNameBadge: TextView = itemView.findViewById(R.id.tvNameBadge)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
@@ -28,7 +30,7 @@ class ContactsAdapter(private val contacts: List<Contact>) :
 
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
         val contact = contacts[position]
-        holder.tvName.text = contact.Name
+        bindNames(holder.itemView.context, holder.tvName, holder.tvNameBadge, contact.Names)
         holder.tvNumber.text = contact.Number
 
         holder.container.setOnClickListener {

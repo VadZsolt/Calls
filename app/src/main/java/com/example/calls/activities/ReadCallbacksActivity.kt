@@ -20,12 +20,10 @@ import com.example.calls.R
 import com.example.calls.adapters.CallsAdapter
 import com.example.calls.models.Calls
 import java.util.Calendar
-import java.util.Locale
 
 class ReadCallbacksActivity : AppCompatActivity() {
 
-    // Change this to widen the range: 1 = today only, 7 = last week, etc.
-    private val DAYS_TO_CHECK = 2
+    private val DAYS_TO_CHECK = 3
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar
@@ -50,10 +48,10 @@ class ReadCallbacksActivity : AppCompatActivity() {
         recyclerView.visibility = View.GONE
         tvEmptyState.visibility = View.GONE
 
-        fetchAndComputeCallbacks(showFullOverlay = true) // initial load: use the big overlay
+        fetchAndComputeCallbacks(showFullOverlay = true)
 
         swipeRefresh.setOnRefreshListener {
-            fetchAndComputeCallbacks(showFullOverlay = false) // pull-to-refresh: use only the swipe spinner
+            fetchAndComputeCallbacks(showFullOverlay = false)
         }
     }
 
@@ -75,13 +73,23 @@ class ReadCallbacksActivity : AppCompatActivity() {
                 val data = response.getJSONArray("data")
                 for (i in 0 until data.length()) {
                     val obj = data.getJSONObject(i)
+
+                    val namesArray = obj.optJSONArray("Names")
+                    val names = mutableListOf<String>()
+                    if (namesArray != null) {
+                        for (n in 0 until namesArray.length()) {
+                            names.add(namesArray.getString(n))
+                        }
+                    }
+
                     allCalls.add(
                         Calls(
                             obj.getString("Date"),
                             obj.getString("Number"),
                             obj.getString("Name"),
                             obj.getString("Type"),
-                            obj.optString("Uploader", "")
+                            obj.optString("Uploader", ""),
+                            Names = names
                         )
                     )
                 }
@@ -112,15 +120,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
         queue.add(jsonObjectRequest)
     }
 
-    /**
-     * Finds numbers whose most recent Missed/Rejected call within the last [days] days
-     * has no later Outgoing call after it (i.e. not called back yet).
-     */
     private fun computeCallbacksNeeded(allCalls: List<Calls>, days: Int): List<Calls> {
-        // Build the set of allowed "MM/dd" day-strings, e.g. today + the past (days-1) days
-        //sort to ascending to find incoming or outgoing calls after missed
-
         val sortedCalls = allCalls.sortedBy { it.Date }
+
         val allowedDays = mutableSetOf<String>()
         val cal = Calendar.getInstance()
         repeat(days) {
@@ -130,12 +132,12 @@ class ReadCallbacksActivity : AppCompatActivity() {
             cal.add(Calendar.DAY_OF_YEAR, -1)
         }
 
-        // Track per-number: last missed/rejected call info, and whether an outgoing call happened after it
         data class Tracker(
             var lastMissedDate: String? = null,
             var lastMissedType: String? = null,
             var name: String = "Unknown",
-            var outgoingAfter: Boolean = false
+            var names: List<String> = emptyList(),
+            var resolved: Boolean = false
         )
 
         val byNumber = mutableMapOf<String, Tracker>()
@@ -152,11 +154,12 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     tracker.lastMissedDate = date
                     tracker.lastMissedType = type
                     tracker.name = call.Name ?: tracker.name
-                    tracker.outgoingAfter = false // reset — a newer missed call resets "called back" state
+                    tracker.names = call.Names.ifEmpty { tracker.names }
+                    tracker.resolved = false
                 }
-            } else if (type == "Outgoing" || type =="Incoming") {
+            } else if (type == "Outgoing" || type == "Incoming") {
                 if (tracker.lastMissedDate != null && date > tracker.lastMissedDate!!) {
-                    tracker.outgoingAfter = true
+                    tracker.resolved = true
                 }
             }
         }
@@ -164,9 +167,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
         val result = mutableListOf<Calls>()
         for ((number, tracker) in byNumber) {
             val missedDate = tracker.lastMissedDate ?: continue
-            if (tracker.outgoingAfter) continue
+            if (tracker.resolved) continue
 
-            val missedDay = missedDate.split(" ")[0] // "MM/dd" part
+            val missedDay = missedDate.split(" ")[0]
             if (missedDay !in allowedDays) continue
 
             result.add(
@@ -175,12 +178,12 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     Number = number,
                     Name = tracker.name,
                     Type = tracker.lastMissedType,
-                    Uploader = null
+                    Uploader = null,
+                    Names = tracker.names
                 )
             )
         }
 
-        // Newest first
         return result.sortedByDescending { it.Date }
     }
 }

@@ -5,5 +5,6 @@ data class Calls(
     val Number: String? = null,
     val Name: String? = null,
     val Type: String? = null,
-    val Uploader: String? = null
+    val Uploader: String? = null,
+    val Names: List<String> = emptyList()
 )

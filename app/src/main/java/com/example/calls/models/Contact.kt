@@ -2,5 +2,5 @@ package com.example.calls.models
 
 data class Contact(
     val Number: String,
-    val Name: String
+    val Names: List<String>
 )

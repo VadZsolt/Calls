@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calls.R
 import com.example.calls.models.Calls
+import com.example.calls.utils.bindNames
 
 class CallsAdapter(private val calls: List<Calls>) :
     RecyclerView.Adapter<CallsAdapter.CallViewHolder>() {
@@ -25,6 +26,8 @@ class CallsAdapter(private val calls: List<Calls>) :
         val tvType: TextView = itemView.findViewById(R.id.tvType)
         val tvUploader: TextView = itemView.findViewById(R.id.tvUploader)
         val cardCall: CardView = itemView.findViewById(R.id.cardCall)
+
+        val tvNameBadge: TextView = itemView.findViewById(R.id.tvNameBadge)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CallViewHolder {
@@ -79,6 +82,7 @@ class CallsAdapter(private val calls: List<Calls>) :
                 }
                 .start()
         }
+        bindNames(holder.itemView.context, holder.tvName, holder.tvNameBadge, call.Names.ifEmpty { listOf(call.Name ?: "Unknown") })
     }
 
     override fun getItemCount(): Int = calls.size

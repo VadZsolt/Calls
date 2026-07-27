@@ -3,7 +3,6 @@ package com.example.calls.activities
 import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
@@ -87,7 +86,21 @@ class ReadByDateActivity : AppCompatActivity() {
                 val contactsArray = response.getJSONArray("contacts")
                 for (i in 0 until contactsArray.length()) {
                     val obj = contactsArray.getJSONObject(i)
-                    contacts.add(Contact(obj.getString("Number"), obj.getString("Name")))
+
+                    val namesArray = obj.optJSONArray("Names")
+                    val names = mutableListOf<String>()
+                    if (namesArray != null) {
+                        for (n in 0 until namesArray.length()) {
+                            names.add(namesArray.getString(n))
+                        }
+                    }
+
+                    contacts.add(
+                        Contact(
+                            Number = obj.getString("Number"),
+                            Names = names
+                        )
+                    )
                 }
 
                 readProgressLayout.visibility = View.GONE
