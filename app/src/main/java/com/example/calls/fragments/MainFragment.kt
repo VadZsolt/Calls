@@ -16,6 +16,8 @@ import android.widget.TextView
 import android.content.Intent
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.example.calls.activities.ReadCallbacksActivity
+import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -33,6 +35,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private lateinit var syncStatusIconBg: FrameLayout
     private lateinit var syncStatusIcon: ImageView
     private lateinit var tvSyncSubtitle: TextView
+    private lateinit var btnReadCallbacks: MaterialCardView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -44,11 +47,13 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         syncStatusIconBg = view.findViewById(R.id.syncStatusIconBg)
         syncStatusIcon = view.findViewById(R.id.syncStatusIcon)
         tvSyncSubtitle = view.findViewById(R.id.tvSyncSubtitle)
+        btnReadCallbacks = view.findViewById(R.id.btnReadCallbacks)
 
         switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) startSyncService() else stopSyncService()
         }
 
+        //autosync
         CallSyncService.isRunning
             .onEach { running ->
                 tvSyncStatus.text = if (running) "Auto-sync: Running" else "Auto-sync: Stopped"
@@ -76,6 +81,10 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                 }
             }
             .launchIn(viewLifecycleOwner.lifecycleScope)
+        // Read callbacks
+        view.findViewById<View>(R.id.btnReadCallbacks).setOnClickListener {
+            startActivity(Intent(requireContext(), ReadCallbacksActivity::class.java))
+        }
     }
 
     override fun onResume() {
