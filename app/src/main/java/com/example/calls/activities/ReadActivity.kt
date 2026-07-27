@@ -2,28 +2,35 @@ package com.example.calls.activities
 
 import android.os.Bundle
 import android.view.View
-import android.widget.ProgressBar
-import android.widget.RelativeLayout
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
+import com.android.volley.Request.Priority
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.adapters.CallsAdapter
 import com.example.calls.models.Calls
-import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.TimeZone
+import android.widget.ProgressBar
+import android.widget.RelativeLayout
+import android.widget.Toast
 
 class ReadActivity : AppCompatActivity() {
+
+    private val PAGE_SIZE = 20
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar
     lateinit var recyclerView: RecyclerView
+
+    private val calls = arrayListOf<Calls>()
+    private lateinit var adapter: CallsAdapter
+    private lateinit var layoutManager: LinearLayoutManager
+
+    private var isLoading = false
+    private var hasMore = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,33 +40,69 @@ class ReadActivity : AppCompatActivity() {
         readProgressBar = findViewById(R.id.readProgressBar)
         recyclerView = findViewById(R.id.recyclerView)
 
-        readProgressLayout.visibility = View.VISIBLE
-        recyclerView.visibility = View.GONE
+        layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = layoutManager
 
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = CallsAdapter(calls)
+        recyclerView.adapter = adapter
 
-        val calls = arrayListOf<Calls>()
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(rv, dx, dy)
+                if (dy <= 0 || isLoading || !hasMore) return
+
+                val visibleItemCount = layoutManager.childCount
+                val totalItemCount = layoutManager.itemCount
+                val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
+
+                // Trigger next page a bit before hitting the very bottom
+                if (visibleItemCount + firstVisibleItem >= totalItemCount - 8) {
+                    loadNextPage()
+                }
+            }
+        })
+
+        loadNextPage() // initial load
+    }
+
+    private fun loadNextPage() {
+        if (isLoading || !hasMore) return
+        isLoading = true
+
+        if (calls.isEmpty()) {
+            readProgressLayout.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        }
 
         val queue = Volley.newRequestQueue(this)
-        val url = getString(R.string.script_url)
+        val offset = calls.size
+        val url = "${getString(R.string.script_url)}?action=page&offset=$offset&limit=$PAGE_SIZE"
 
         val jsonObjectRequest = object : JsonObjectRequest(
             Request.Method.GET, url, null,
             Response.Listener { response ->
                 val data = response.getJSONArray("data")
+                val newCalls = arrayListOf<Calls>()
+
                 for (i in 0 until data.length()) {
-                    val callJsonObject = data.getJSONObject(i)
-                    val callObject = Calls(
-                        formatDate(callJsonObject.getString("Date")),
-                        callJsonObject.getString("Number"),
-                        callJsonObject.getString("Name"),
-                        callJsonObject.getString("Type"),
-                        callJsonObject.getString("Uploader")
+                    val obj = data.getJSONObject(i)
+                    newCalls.add(
+                        Calls(
+                            obj.getString("Date"),
+                            obj.getString("Number"),
+                            obj.getString("Name"),
+                            obj.getString("Type"),
+                            obj.optString("Uploader", "")
+                        )
                     )
-                    calls.add(callObject)
                 }
 
-                recyclerView.adapter = CallsAdapter(calls)
+                val startPos = calls.size
+                calls.addAll(newCalls)
+                adapter.notifyItemRangeInserted(startPos, newCalls.size)
+
+                hasMore = response.optBoolean("hasMore", false) && newCalls.isNotEmpty()
+                isLoading = false
 
                 readProgressLayout.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
@@ -67,28 +110,12 @@ class ReadActivity : AppCompatActivity() {
             Response.ErrorListener { error ->
                 Toast.makeText(this, error.toString(), Toast.LENGTH_SHORT).show()
                 readProgressLayout.visibility = View.GONE
+                isLoading = false
             }
         ) {
-            override fun getHeaders(): MutableMap<String, String> {
-                return super.getHeaders()
-            }
-            override fun getPriority(): Priority {
-                return Priority.HIGH
-            }
+            override fun getPriority(): Priority = Priority.HIGH
         }
 
         queue.add(jsonObjectRequest)
-    }
-
-    private fun formatDate(isoDate: String): String {
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            val outputFormat = SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault())
-
-            val date = inputFormat.parse(isoDate)
-            if (date != null) outputFormat.format(date) else isoDate
-        } catch (e: Exception) {
-            isoDate
-        }
     }
 }

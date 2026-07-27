@@ -25,7 +25,7 @@ import java.util.Locale
 class ReadCallbacksActivity : AppCompatActivity() {
 
     // Change this to widen the range: 1 = today only, 7 = last week, etc.
-    private val DAYS_TO_CHECK = 3
+    private val DAYS_TO_CHECK = 2
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar
@@ -42,24 +42,31 @@ class ReadCallbacksActivity : AppCompatActivity() {
         readProgressBar = findViewById(R.id.readProgressBarCallbacks)
         recyclerView = findViewById(R.id.recyclerViewCallbacks)
         tvEmptyState = findViewById(R.id.tvEmptyStateCallbacks)
-
         swipeRefresh = findViewById(R.id.swipeRefresh)
-        swipeRefresh.setOnRefreshListener {
-            fetchAndComputeCallbacks()
-        }
 
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        fetchAndComputeCallbacks()
-    }
-
-    private fun fetchAndComputeCallbacks() {
         readProgressLayout.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
         tvEmptyState.visibility = View.GONE
 
+        fetchAndComputeCallbacks(showFullOverlay = true) // initial load: use the big overlay
+
+        swipeRefresh.setOnRefreshListener {
+            fetchAndComputeCallbacks(showFullOverlay = false) // pull-to-refresh: use only the swipe spinner
+        }
+    }
+
+    private fun fetchAndComputeCallbacks(showFullOverlay: Boolean) {
+        if (showFullOverlay) {
+            readProgressLayout.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            tvEmptyState.visibility = View.GONE
+        }
+
         val queue = Volley.newRequestQueue(this)
-        val url = getString(R.string.script_url) // default doGet — full call list
+        val fetchDays = DAYS_TO_CHECK + 2
+        val url = "${getString(R.string.script_url)}?action=recent&days=$fetchDays"
 
         val jsonObjectRequest = object : JsonObjectRequest(
             Request.Method.GET, url, null,
@@ -86,7 +93,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
 
                 if (callbacksNeeded.isEmpty()) {
                     tvEmptyState.visibility = View.VISIBLE
+                    recyclerView.visibility = View.GONE
                 } else {
+                    tvEmptyState.visibility = View.GONE
                     recyclerView.adapter = CallsAdapter(callbacksNeeded)
                     recyclerView.visibility = View.VISIBLE
                 }

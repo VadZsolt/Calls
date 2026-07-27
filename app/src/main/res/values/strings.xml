@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Calls</string>
-    <string name="script_url">https://script.google.com/macros/s/AKfycbyTEz53pwPxG_pYuK7H6ueZoI8n5fVB9O7da2ZdCYQjTLB4bnRy_hsyJ5gePIxCKhAg/exec</string>
+    <string name="script_url">https://script.google.com/macros/s/AKfycbzmSShgxGsgR_DtzOrlBjlptbZYgn4AFMbune5uE5T19ZgT4-j4p77OLyRSX5osHhfc/exec</string>
     <string name="sheet_url">https://docs.google.com/spreadsheets/d/1yBQT0h-eJPuM2tfUR8BK5t4TcuV8ZaiL1Svc2yBmzaY/edit</string>
 </resources>

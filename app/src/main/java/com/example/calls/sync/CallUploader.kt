@@ -156,7 +156,7 @@ class CallUploader(private val context: Context) {
                 entries.add(
                     CallLogEntry(
                         name = it.getString(nameIdx) ?: "Unknown",
-                        number = it.getString(numberIdx) ?: "",
+                        number = normalizePhoneNumber(it.getString(numberIdx) ?: ""),
                         type = callTypeToString(it.getInt(typeIdx)),
                         date = formatMillis(millis),
                         rawMillis = millis
@@ -183,5 +183,18 @@ class CallUploader(private val context: Context) {
     private fun formatMillis(millis: Long): String {
         val sdf = SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault())
         return sdf.format(Date(millis))
+    }
+    private fun normalizePhoneNumber(rawNumber: String): String {
+        var number = rawNumber.trim()
+
+        // Remove spaces, dashes, parentheses if present
+        number = number.replace(Regex("[\\s\\-()]"), "")
+
+        return when {
+            number.startsWith("0040") -> "0" + number.removePrefix("0040")
+            number.startsWith("+40") -> "0" + number.removePrefix("+40")
+            number.startsWith("40") && number.length == 11 -> "0" + number.removePrefix("40")
+            else -> number
+        }
     }
 }
