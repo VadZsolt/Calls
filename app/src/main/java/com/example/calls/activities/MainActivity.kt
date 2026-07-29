@@ -1,6 +1,7 @@
 package com.example.calls.activities
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -11,7 +12,9 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -60,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
 
         toolbar.setNavigationOnClickListener {
-            drawerLayout.openDrawer(Gravity.START)
+            drawerLayout.openDrawer(GravityCompat.START)
         }
 
         navView.setNavigationItemSelectedListener { menuItem ->
@@ -74,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.fragmentContainer, fragment)
                 .commit()
             toolbar.title = menuItem.title
-            drawerLayout.closeDrawer(Gravity.START)
+            drawerLayout.closeDrawer(GravityCompat.START)
             true
         }
 
@@ -179,6 +182,9 @@ class MainActivity : AppCompatActivity() {
                     "Some permissions were denied — call sync, SIM detection, or notifications may not work correctly",
                     Toast.LENGTH_LONG
                 ).show()
+                val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                activityManager.clearApplicationUserData()
+                return
             }
             showSimPrompt()
         }

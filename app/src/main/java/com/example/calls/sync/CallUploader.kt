@@ -1,8 +1,11 @@
 package com.example.calls.sync
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.Cursor
 import android.provider.CallLog
+import androidx.core.content.ContextCompat
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
 import com.android.volley.RequestQueue
@@ -30,7 +33,7 @@ sealed class SyncResult {
 class CallUploader(private val context: Context) {
 
     private val requestQueue: RequestQueue = Volley.newRequestQueue(context)
-    private val INITIAL_FALLBACK_DAYS = 3
+    private val INITIAL_FALLBACK_DAYS = 1
     private val url = context.getString(R.string.script_url)
 
     data class CallLogEntry(
@@ -110,7 +113,7 @@ class CallUploader(private val context: Context) {
                 }
             }
 
-            stringRequest.retryPolicy = DefaultRetryPolicy(5000, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            stringRequest.retryPolicy = DefaultRetryPolicy(8000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
             stringRequest.setShouldCache(false)
             requestQueue.add(stringRequest)
         }
@@ -118,6 +121,13 @@ class CallUploader(private val context: Context) {
 
     private fun readCallLogsSince(cutoffMillis: Long, simAccountId: String): List<CallLogEntry> {
         val entries = mutableListOf<CallLogEntry>()
+
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return entries // empty list — syncNow() will treat this as NoNewCalls
+        }
+
         val parts = simAccountId.split("|")
         val iccId = parts.getOrElse(0) { "" }
         val subId = parts.getOrElse(1) { "" }

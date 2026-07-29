@@ -1,5 +1,6 @@
 package com.example.calls.activities
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
@@ -14,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.calls.R
 import com.example.calls.data.SyncPreferences
+import com.example.calls.services.CallSyncService
 import com.example.calls.sync.CallUploader
 import com.example.calls.sync.SyncResult
 import com.google.android.material.button.MaterialButton
@@ -126,6 +128,7 @@ class WriteActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                     updateLastUploadText()
+                    notifyServiceToRefresh()
                 }
                 is SyncResult.PartialFailure -> {
                     Toast.makeText(
@@ -134,6 +137,7 @@ class WriteActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG
                     ).show()
                     updateLastUploadText()
+                    notifyServiceToRefresh()
                 }
                 SyncResult.NoNewCalls -> {
                     Toast.makeText(this@WriteActivity, "No new calls to upload", Toast.LENGTH_SHORT).show()
@@ -151,5 +155,9 @@ class WriteActivity : AppCompatActivity() {
     private fun formatMillis(millis: Long): String {
         val sdf = SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault())
         return sdf.format(Date(millis))
+    }
+    private fun notifyServiceToRefresh() {
+        val intent = Intent(CallSyncService.ACTION_REFRESH_STATUS).setPackage(packageName)
+        sendBroadcast(intent)
     }
 }

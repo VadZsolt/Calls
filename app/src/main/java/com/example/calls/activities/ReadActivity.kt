@@ -85,9 +85,6 @@ class ReadActivity : AppCompatActivity() {
         if (isLoading || !hasMore) return
         isLoading = true
 
-        // Only show the big overlay on the very first load ever for this screen instance.
-        // Every later load (scroll pagination or pull-to-refresh) relies on
-        // the SwipeRefreshLayout's own spinner instead.
         if (!hasLoadedOnce) {
             readProgressLayout.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
