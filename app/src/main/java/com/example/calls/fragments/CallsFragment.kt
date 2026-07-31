@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import com.example.calls.R
 import com.example.calls.activities.ReadActivity
 import com.example.calls.activities.ReadByDateActivity
+import com.example.calls.activities.StatsActivity
 import com.example.calls.activities.WriteActivity
 
 class CallsFragment : Fragment(R.layout.fragment_calls) {
@@ -23,6 +24,9 @@ class CallsFragment : Fragment(R.layout.fragment_calls) {
         }
         view.findViewById<View>(R.id.btnReadByDate).setOnClickListener {
             startActivity(Intent(requireContext(), ReadByDateActivity::class.java))
+        }
+        view.findViewById<View>(R.id.btnUploaderStats).setOnClickListener {
+            startActivity(Intent(requireContext(), StatsActivity::class.java))
         }
     }
 }

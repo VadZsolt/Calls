@@ -36,7 +36,7 @@ class CallSyncService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
 
     private var lastNotificationText = "Watching for new calls..."
-    private var lastSyncFailed = false // tracks whether to show the "Manual Upload" action
+    private var lastSyncFailed = false
     private var isSyncing = false
 
     companion object {

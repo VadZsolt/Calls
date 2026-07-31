@@ -1,0 +1,82 @@
+function backfillContactsFromHistory() {
+  var lastRow = sheet.getLastRow();
+
+  if (lastRow <= 1) {
+    Logger.log("No call history to backfill.");
+    return;
+  }
+
+  var lastCol = sheet.getLastColumn();
+  var rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  var map = {};
+
+  for (var i = 0; i < rows.length; i++) {
+    var number = rows[i][2];
+    var name = rows[i][3];
+
+    if (!number || !name) continue;
+
+    var cleanNumber = typeof number === "string" ? number.replace(/^'/, "") : number;
+
+    if (!map[cleanNumber]) {
+      map[cleanNumber] = [];
+    }
+
+    if (map[cleanNumber].indexOf(name) === -1) {
+      map[cleanNumber].push(name);
+    }
+  }
+
+  var contactsLastRow = contactsSheet.getLastRow();
+  if (contactsLastRow > 1) {
+    contactsSheet.getRange(2, 1, contactsLastRow - 1, 2).clearContent();
+  }
+
+  var outputRows = [];
+  for (var num in map) {
+    outputRows.push(["'" + num, map[num].join("|")]); // <-- re-add apostrophe before writing
+  }
+
+  if (outputRows.length > 0) {
+    // Force column A (Number) to plain text BEFORE writing, so Sheets never reinterprets it
+    contactsSheet.getRange(2, 1, outputRows.length, 1).setNumberFormat("@");
+    contactsSheet.getRange(2, 1, outputRows.length, 2).setValues(outputRows);
+  }
+
+  Logger.log("Backfilled " + outputRows.length + " unique numbers into Contacts.");
+}
+
+function backfillStatsFromHistory() {
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+
+  var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  var map = {}; // { uploader: { total, lastDate } }
+
+  for (var i = 0; i < rows.length; i++) {
+    var uploader = rows[i][5];
+    var date = rows[i][1];
+    if (!uploader) continue;
+
+    if (!map[uploader]) map[uploader] = { total: 0, lastDate: date };
+    map[uploader].total++;
+    if (date > map[uploader].lastDate) map[uploader].lastDate = date;
+  }
+
+  var statsLastRow = statsSheet.getLastRow();
+  if (statsLastRow > 1) {
+    statsSheet.getRange(2, 1, statsLastRow - 1, 3).clearContent();
+  }
+
+  var outputRows = [];
+  for (var uploader in map) {
+    outputRows.push([uploader, map[uploader].total, map[uploader].lastDate]);
+  }
+
+  if (outputRows.length > 0) {
+    statsSheet.getRange(2, 1, outputRows.length, 3).setValues(outputRows);
+  }
+
+  Logger.log("Backfilled stats for " + outputRows.length + " uploaders.");
+}
