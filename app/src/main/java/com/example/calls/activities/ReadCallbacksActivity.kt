@@ -116,6 +116,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
         ) {
             override fun getPriority(): Priority = Priority.HIGH
         }
+        jsonObjectRequest.retryPolicy = com.android.volley.DefaultRetryPolicy(
+            8000, 1, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
 
         queue.add(jsonObjectRequest)
     }
