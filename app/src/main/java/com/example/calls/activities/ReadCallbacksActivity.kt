@@ -84,12 +84,14 @@ class ReadCallbacksActivity : AppCompatActivity() {
 
                     allCalls.add(
                         Calls(
+                            obj.getString("Id"),
                             obj.getString("Date"),
                             obj.getString("Number"),
                             obj.getString("Name"),
                             obj.getString("Type"),
                             obj.optString("Uploader", ""),
-                            Names = names
+                            Names = names,
+                            obj.optString("Observation", "")
                         )
                     )
                 }
@@ -123,7 +125,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
         queue.add(jsonObjectRequest)
     }
 
-    private fun computeCallbacksNeeded(allCalls: List<Calls>, days: Int): List<Calls> {
+    private fun computeCallbacksNeeded(allCalls: List<Calls>, days: Int): MutableList<Calls> {
         val sortedCalls = allCalls.sortedBy { it.Date }
 
         val allowedDays = mutableSetOf<String>()
@@ -140,7 +142,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
             var lastMissedType: String? = null,
             var name: String = "Unknown",
             var names: List<String> = emptyList(),
-            var resolved: Boolean = false
+            var resolved: Boolean = false,
+            var observation: String? = null,
+            var id: String? = null
         )
 
         val byNumber = mutableMapOf<String, Tracker>()
@@ -149,6 +153,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
             val number = call.Number ?: continue
             val date = call.Date ?: continue
             val type = call.Type ?: continue
+            val callId = call.Id ?: continue
+            val observation = call.Observation ?: continue
 
             val tracker = byNumber.getOrPut(number) { Tracker() }
 
@@ -159,6 +165,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     tracker.name = call.Name ?: tracker.name
                     tracker.names = call.Names.ifEmpty { tracker.names }
                     tracker.resolved = false
+                    tracker.observation = observation
+                    tracker.id = callId
                 }
             } else if (type == "Outgoing" || type == "Incoming") {
                 if (tracker.lastMissedDate != null && date > tracker.lastMissedDate!!) {
@@ -177,16 +185,18 @@ class ReadCallbacksActivity : AppCompatActivity() {
 
             result.add(
                 Calls(
+                    Id = tracker.id,
                     Date = missedDate,
                     Number = number,
                     Name = tracker.name,
                     Type = tracker.lastMissedType,
                     Uploader = null,
-                    Names = tracker.names
+                    Names = tracker.names,
+                    Observation = tracker.observation
                 )
             )
         }
 
-        return result.sortedByDescending { it.Date }
+        return result.sortedByDescending { it.Date }.toMutableList()
     }
 }

@@ -114,12 +114,14 @@ class ReadActivity : AppCompatActivity() {
 
                         newCalls.add(
                             Calls(
+                                obj.getString("Id"),
                                 obj.getString("Date"),
                                 obj.getString("Number"),
                                 obj.getString("Name"),
                                 obj.getString("Type"),
                                 obj.optString("Uploader", ""),
-                                Names = names
+                                Names = names,
+                                obj.optString("Observation", "")
                             )
                         )
                     }

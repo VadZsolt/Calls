@@ -78,6 +78,17 @@
                 android:textStyle="bold"
                 android:textColor="@color/recycleTextSec"
                 android:layout_marginTop="4dp" />
+            <TextView
+                android:id="@+id/tvObservation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                android:textColor="@color/recycleTextSec"
+                android:layout_marginTop="4dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:visibility="gone"/>
 
         </LinearLayout>
 
