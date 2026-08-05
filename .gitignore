@@ -31,3 +31,9 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Keystore
+keystore.properties
+
+app/src/main/res/values/strings.xml
+keystore.properties

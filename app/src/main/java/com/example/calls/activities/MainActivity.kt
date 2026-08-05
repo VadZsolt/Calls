@@ -3,6 +3,7 @@ package com.example.calls.activities
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.telephony.SubscriptionManager
@@ -29,6 +30,11 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import android.os.Build
+import android.net.Uri
+import android.provider.Settings
+import com.example.calls.update.AppUpdater
+import com.example.calls.update.UpdateInfo
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     private val ALL_PERMISSIONS_CODE = 500
     private var isPromptShowing = false
+    private var pendingUpdateInfo: com.example.calls.update.UpdateInfo? = null
 
     private val allRequiredPermissions: Array<String>
         get() {
@@ -90,6 +97,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkUploaderName()
+        checkForAppUpdate()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val info = pendingUpdateInfo
+        if (info != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && packageManager.canRequestPackageInstalls()) {
+            pendingUpdateInfo = null
+            startDownload(info)
+        }
     }
 
     // ---------- Called from SettingsFragment after a reset ----------
@@ -226,5 +243,52 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .show()
+    }
+    private fun checkForAppUpdate() {
+        AppUpdater(this).checkForUpdate { updateInfo ->
+            if (updateInfo != null) {
+                runOnUiThread {
+                    AlertDialog.Builder(this)
+                        .setTitle("Update available")
+                        .setMessage(updateInfo.changelog.ifBlank { "A new version is available." })
+                        .setPositiveButton("Update") { _, _ ->
+                            requestInstallPermissionThenDownload(updateInfo)
+                        }
+                        .setNegativeButton("Later", null)
+                        .show()
+                }
+            }
+        }
+    }
+
+    private fun requestInstallPermissionThenDownload(updateInfo: UpdateInfo) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            pendingUpdateInfo = updateInfo
+            Toast.makeText(this, "Please allow installing updates, then come back", Toast.LENGTH_LONG).show()
+            val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                .setData(Uri.parse("package:$packageName"))
+            startActivity(intent)
+            return
+        }
+
+        startDownload(updateInfo)
+    }
+
+    private fun startDownload(updateInfo: UpdateInfo) {
+        AppUpdater(this).downloadAndInstall(
+            updateInfo.apkUrl,
+            onStarted = {
+                Toast.makeText(this, "Downloading update...", Toast.LENGTH_SHORT).show()
+            },
+            onProgress = { percent ->
+                // Optional: update a progress bar here if you add one to the UI
+            },
+            onComplete = {
+                Toast.makeText(this, "Download complete — installing...", Toast.LENGTH_SHORT).show()
+            },
+            onError = { message ->
+                Toast.makeText(this, "Download failed: $message", Toast.LENGTH_LONG).show()
+            }
+        )
     }
 }
