@@ -11,6 +11,7 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.example.calls.BuildConfig
 import com.example.calls.R
+import com.example.calls.sync.VolleySingleton
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -31,7 +32,7 @@ class AppUpdater(private val context: Context) {
     private val client = OkHttpClient()
 
     fun checkForUpdate(onResult: (UpdateInfo?) -> Unit) {
-        val queue = Volley.newRequestQueue(context)
+        val queue = VolleySingleton.getInstance(context)
         val url = "${context.getString(R.string.script_url)}?action=appVersion"
 
         val request = JsonObjectRequest(

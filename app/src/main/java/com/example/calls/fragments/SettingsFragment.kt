@@ -17,17 +17,22 @@ import com.example.calls.data.SyncPreferences
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
+import com.example.calls.BuildConfig
 
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
     private lateinit var tvCurrentName: TextView
     private lateinit var tvCurrentSim: TextView
+    private lateinit var tvAppVersion: TextView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         tvCurrentName = view.findViewById(R.id.tvCurrentName)
         tvCurrentSim = view.findViewById(R.id.tvCurrentSim)
+        tvAppVersion = view.findViewById(R.id.tvAppVersion)
+
+        tvAppVersion.text = "Version ${BuildConfig.VERSION_NAME}.${BuildConfig.VERSION_CODE}"
 
         updateCurrentInfo()
 

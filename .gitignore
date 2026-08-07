@@ -35,4 +35,8 @@ google-services.json
 # Keystore
 keystore.properties
 
+# pro files
+*.pro
+
 app/src/main/res/values/strings.xml
+

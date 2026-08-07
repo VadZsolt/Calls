@@ -17,6 +17,7 @@ import com.example.calls.models.Calls
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.Toast
+import com.example.calls.sync.VolleySingleton
 
 class ReadActivity : AppCompatActivity() {
 
@@ -90,7 +91,7 @@ class ReadActivity : AppCompatActivity() {
             recyclerView.visibility = View.GONE
         }
 
-        val queue = Volley.newRequestQueue(this)
+        val queue = VolleySingleton.getInstance(this)
         val offset = calls.size
         val url = "${getString(R.string.script_url)}?action=page&offset=$offset&limit=$PAGE_SIZE"
 

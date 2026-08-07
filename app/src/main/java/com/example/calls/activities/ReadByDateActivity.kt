@@ -20,6 +20,7 @@ import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.adapters.ContactsAdapter
 import com.example.calls.models.Contact
+import com.example.calls.sync.VolleySingleton
 import java.net.URLEncoder
 import java.util.Calendar
 
@@ -75,7 +76,7 @@ class ReadByDateActivity : AppCompatActivity() {
         recyclerView.visibility = View.GONE
 
         val contacts = arrayListOf<Contact>()
-        val queue = Volley.newRequestQueue(this)
+        val queue = VolleySingleton.getInstance(this)
 
         val encodedDay = URLEncoder.encode(day, "UTF-8")
         val url = "${getString(R.string.script_url)}?action=uniqueNumbers&day=$encodedDay"

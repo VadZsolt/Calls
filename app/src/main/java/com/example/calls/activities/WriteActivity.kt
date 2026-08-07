@@ -1,5 +1,6 @@
 package com.example.calls.activities
 
+import android.app.NotificationChannel
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -56,14 +57,14 @@ class WriteActivity : AppCompatActivity() {
         btnSaveDrive.setOnClickListener {
             checkPermissionAndProceed()
         }
-        btnSaveDrive.setOnLongClickListener {
-            lifecycleScope.launch {
-                SyncPreferences.setLastSyncMillis(this@WriteActivity, 0L) // reset to force full re-sync
-                Toast.makeText(this@WriteActivity, "Sync point reset", Toast.LENGTH_SHORT).show()
-                updateLastUploadText()
-            }
-            true
-        }
+//        btnSaveDrive.setOnLongClickListener {
+//            lifecycleScope.launch {
+//                SyncPreferences.setLastSyncMillis(this@WriteActivity, 0L) // reset to force full re-sync
+//                Toast.makeText(this@WriteActivity, "Sync point reset", Toast.LENGTH_SHORT).show()
+//                updateLastUploadText()
+//            }
+//            true
+//        }
     }
     override fun onResume() {
         super.onResume()
@@ -85,7 +86,6 @@ class WriteActivity : AppCompatActivity() {
         val granted = ContextCompat.checkSelfPermission(
             this, android.Manifest.permission.READ_CALL_LOG
         ) == PackageManager.PERMISSION_GRANTED
-
         if (granted) {
             runSync()
         } else {
@@ -147,6 +147,9 @@ class WriteActivity : AppCompatActivity() {
                 }
                 SyncResult.NetworkFailure -> {
                     Toast.makeText(this@WriteActivity, "Upload failed — check your internet connection", Toast.LENGTH_LONG).show()
+                }
+                SyncResult.AlreadySyncing -> {
+                    Toast.makeText(this@WriteActivity, "A sync is already in progress", Toast.LENGTH_SHORT).show()
                 }
             }
         }

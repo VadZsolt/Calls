@@ -11,7 +11,6 @@ import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.data.SyncPreferences
 import kotlinx.coroutines.flow.first
@@ -20,6 +19,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 
 sealed class SyncResult {
@@ -28,13 +28,19 @@ sealed class SyncResult {
     object NoNewCalls : SyncResult()
     data class PartialFailure(val uploaded: Int) : SyncResult() // some succeeded, then one failed
     object NetworkFailure : SyncResult() // failed on the very first call, nothing uploaded
+    object AlreadySyncing : SyncResult()
 }
 
 class CallUploader(private val context: Context) {
 
-    private val requestQueue: RequestQueue = Volley.newRequestQueue(context)
+    private val requestQueue: RequestQueue = VolleySingleton.getInstance(context)
     private val INITIAL_FALLBACK_DAYS = 1
     private val url = context.getString(R.string.script_url)
+
+    companion object {
+
+        private val isSyncing = AtomicBoolean(false)
+    }
 
     data class CallLogEntry(
         val name: String,
@@ -45,42 +51,50 @@ class CallUploader(private val context: Context) {
     )
 
     suspend fun syncNow(): SyncResult {
-        val simAccountId = SyncPreferences.getSimAccountId(context).first()
-        if (simAccountId.isNullOrBlank()) return SyncResult.NoSimSelected
-
-        val uploaderName = SyncPreferences.getUploaderName(context).first() ?: "Unknown"
-        val lastSyncMillis = SyncPreferences.getLastSyncMillis(context).first()
-
-        val cutoffMillis = if (lastSyncMillis > 0L) {
-            lastSyncMillis
-        } else {
-            Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -INITIAL_FALLBACK_DAYS) }.timeInMillis
+        if (!isSyncing.compareAndSet(false, true)) {
+            return SyncResult.AlreadySyncing
         }
 
-        val entries = readCallLogsSince(cutoffMillis, simAccountId)
-        if (entries.isEmpty()) return SyncResult.NoNewCalls
+        try {
+            val simAccountId = SyncPreferences.getSimAccountId(context).first()
+            if (simAccountId.isNullOrBlank()) return SyncResult.NoSimSelected
 
-        var successCount = 0
-        var lastSuccessfulMillis = lastSyncMillis
+            val uploaderName = SyncPreferences.getUploaderName(context).first() ?: "Unknown"
+            val lastSyncMillis = SyncPreferences.getLastSyncMillis(context).first()
 
-        for (entry in entries) {
-            val success = sendSingleCallSuspend(entry, uploaderName)
-            if (success) {
-                successCount++
-                lastSuccessfulMillis = entry.rawMillis
+            val cutoffMillis = if (lastSyncMillis > 0L) {
+                lastSyncMillis
             } else {
-                break
+                Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -INITIAL_FALLBACK_DAYS) }.timeInMillis
             }
-        }
 
-        if (successCount > 0) {
-            SyncPreferences.setLastSyncMillis(context, lastSuccessfulMillis)
-        }
+            val entries = readCallLogsSince(cutoffMillis, simAccountId)
+            if (entries.isEmpty()) return SyncResult.NoNewCalls
 
-        return when {
-            successCount == entries.size -> SyncResult.Success(successCount)
-            successCount == 0 -> SyncResult.NetworkFailure
-            else -> SyncResult.PartialFailure(successCount)
+            var successCount = 0
+            var lastSuccessfulMillis = lastSyncMillis
+
+            for (entry in entries) {
+                val success = sendSingleCallSuspend(entry, uploaderName)
+                if (success) {
+                    successCount++
+                    lastSuccessfulMillis = entry.rawMillis
+                } else {
+                    break
+                }
+            }
+
+            if (successCount > 0) {
+                SyncPreferences.setLastSyncMillis(context, lastSuccessfulMillis)
+            }
+
+            return when {
+                successCount == entries.size -> SyncResult.Success(successCount)
+                successCount == 0 -> SyncResult.NetworkFailure
+                else -> SyncResult.PartialFailure(successCount)
+            }
+        } finally {
+            isSyncing.set(false)
         }
     }
 

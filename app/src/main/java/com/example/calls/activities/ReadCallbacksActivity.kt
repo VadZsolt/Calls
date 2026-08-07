@@ -19,11 +19,12 @@ import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.adapters.CallsAdapter
 import com.example.calls.models.Calls
+import com.example.calls.sync.VolleySingleton
 import java.util.Calendar
 
 class ReadCallbacksActivity : AppCompatActivity() {
 
-    private val DAYS_TO_CHECK = 3
+    private val DAYS_TO_CHECK = 2
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar
@@ -62,9 +63,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
             tvEmptyState.visibility = View.GONE
         }
 
-        val queue = Volley.newRequestQueue(this)
-        val fetchDays = DAYS_TO_CHECK + 2
-        val url = "${getString(R.string.script_url)}?action=recent&days=$fetchDays"
+        val queue = VolleySingleton.getInstance(this)
+        val url = "${getString(R.string.script_url)}?action=recent&days=$DAYS_TO_CHECK"
 
         val jsonObjectRequest = object : JsonObjectRequest(
             Request.Method.GET, url, null,

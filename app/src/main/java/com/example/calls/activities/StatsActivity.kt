@@ -17,6 +17,7 @@ import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.adapters.UploaderStatsAdapter
 import com.example.calls.models.UploaderStat
+import com.example.calls.sync.VolleySingleton
 
 class StatsActivity : AppCompatActivity() {
 
@@ -42,7 +43,7 @@ class StatsActivity : AppCompatActivity() {
         readProgressLayout.visibility = View.VISIBLE
         recyclerView.visibility = View.GONE
 
-        val queue = Volley.newRequestQueue(this)
+        val queue = VolleySingleton.getInstance(this)
         val url = "${getString(R.string.script_url)}?action=uploaderStats"
 
         val jsonObjectRequest = object : JsonObjectRequest(

@@ -13,7 +13,7 @@ class NoteUploader(private val context: Context) {
     private val url = context.getString(R.string.script_url)
 
     fun uploadNote(callId: String, note: String, onResult: (Boolean) -> Unit) {
-        val queue = Volley.newRequestQueue(context)
+        val queue = VolleySingleton.getInstance(context)
 
         val request = object : StringRequest(
             Request.Method.POST, "$url?action=addNote",

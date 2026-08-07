@@ -131,6 +131,7 @@ class CallSyncService : Service() {
                         updateNotification("No SIM selected")
                     }
                     SyncResult.NoNewCalls -> { /* nothing changed, leave notification as-is */ }
+                    SyncResult.AlreadySyncing -> { /* nothing changed, leave notification as-is */ }
                 }
             } finally {
                 isSyncing = false
