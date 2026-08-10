@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     AlertDialog.Builder(this)
                         .setTitle("Update available")
-                        .setMessage(updateInfo.changelog.ifBlank { "A new version is available." })
+                        .setMessage(updateInfo.changelog.ifBlank { "A new version is available." } + "\n\n" + updateInfo.description)
                         .setPositiveButton("Update") { _, _ ->
                             requestInstallPermissionThenDownload(updateInfo)
                         }

@@ -23,7 +23,8 @@ import java.io.IOException
 data class UpdateInfo(
     val latestVersionCode: Int,
     val apkUrl: String,
-    val changelog: String
+    val changelog: String,
+    val description : String
 )
 
 class AppUpdater(private val context: Context) {
@@ -41,11 +42,12 @@ class AppUpdater(private val context: Context) {
                 val latestVersionCode = response.optInt("latestVersionCode", 0)
                 val apkUrl = response.optString("apkUrl", "")
                 val changelog = response.optString("changelog", "")
+                val description = response.optString("description", "")
 
                 val currentVersionCode = BuildConfig.VERSION_CODE
 
                 if (latestVersionCode > currentVersionCode && apkUrl.isNotBlank()) {
-                    onResult(UpdateInfo(latestVersionCode, apkUrl, changelog))
+                    onResult(UpdateInfo(latestVersionCode, apkUrl, changelog, description))
                 } else {
                     onResult(null)
                 }
