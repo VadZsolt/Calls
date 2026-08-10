@@ -21,7 +21,7 @@ import com.example.calls.sync.VolleySingleton
 
 class ReadActivity : AppCompatActivity() {
 
-    private val PAGE_SIZE = 20
+    private val PAGE_SIZE = 40
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar
@@ -60,7 +60,7 @@ class ReadActivity : AppCompatActivity() {
                 val totalItemCount = layoutManager.itemCount
                 val firstVisibleItem = layoutManager.findFirstVisibleItemPosition()
 
-                if (visibleItemCount + firstVisibleItem >= totalItemCount - 8) {
+                if (visibleItemCount + firstVisibleItem >= totalItemCount - 20) {
                     loadNextPage()
                 }
             }
@@ -129,6 +129,7 @@ class ReadActivity : AppCompatActivity() {
 
                     val startPos = calls.size
                     calls.addAll(newCalls)
+                    calls.sortByDescending { it.Date }
                     adapter.notifyItemRangeInserted(startPos, newCalls.size)
 
                     hasMore = response.optBoolean("hasMore", false) && newCalls.isNotEmpty()

@@ -129,6 +129,28 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
                 }
             }
             .setNegativeButton("Cancel", null)
+            .setNeutralButton("Delete Call") { _, _ ->
+                confirmDelete(context, call, position)
+            }
+            .show()
+    }
+    private fun confirmDelete(context: android.content.Context, call: Calls, position: Int) {
+        AlertDialog.Builder(context)
+            .setTitle("Delete this call?")
+            .setMessage("This will hide it from all lists. This cannot be undone from the app.")
+            .setPositiveButton("Delete") { _, _ ->
+                val callId = call.Id ?: return@setPositiveButton
+                NoteUploader(context).deleteCall(callId) { success ->
+                    if (success) {
+                        calls.removeAt(position)
+                        notifyItemRemoved(position)
+                        Toast.makeText(context, "Call deleted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to delete", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 

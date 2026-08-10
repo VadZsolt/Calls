@@ -32,4 +32,23 @@ class NoteUploader(private val context: Context) {
         request.setShouldCache(false)
         queue.add(request)
     }
+    fun deleteCall(callId: String, onResult: (Boolean) -> Unit) {
+        val queue = VolleySingleton.getInstance(context)
+
+        val request = object : StringRequest(
+            Request.Method.POST, "$url?action=deleteCall",
+            Response.Listener { onResult(true) },
+            Response.ErrorListener { onResult(false) }
+        ) {
+            override fun getParams(): MutableMap<String, String> {
+                val params = HashMap<String, String>()
+                params["id"] = callId
+                return params
+            }
+        }
+
+        request.retryPolicy = DefaultRetryPolicy(8000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+        request.setShouldCache(false)
+        queue.add(request)
+    }
 }
