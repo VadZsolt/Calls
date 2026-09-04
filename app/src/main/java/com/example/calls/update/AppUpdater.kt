@@ -124,6 +124,11 @@ class AppUpdater(private val context: Context) {
                     }
 
                     mainHandler.post {
+                        if (!isValidApk(destination)) {
+                            onError("Downloaded file appears corrupted — please try again")
+                            destination.delete()
+                            return@post
+                        }
                         onComplete()
                         installApk(destination)
                     }
@@ -149,5 +154,20 @@ class AppUpdater(private val context: Context) {
         }
 
         context.startActivity(installIntent)
+    }
+    private fun isValidApk(file: File): Boolean {
+        if (!file.exists() || file.length() < 1024 * 100) return false // too small
+
+        return try {
+            file.inputStream().use { input ->
+                val header = ByteArray(4)
+                input.read(header)
+                // APK files are ZIP archives — ZIP magic bytes are 'PK\x03\x04'
+                header[0] == 0x50.toByte() && header[1] == 0x4B.toByte() &&
+                        header[2] == 0x03.toByte() && header[3] == 0x04.toByte()
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 }

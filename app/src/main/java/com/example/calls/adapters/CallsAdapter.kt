@@ -111,47 +111,88 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
             hint = "Add a short note about this call"
             setText(call.Observation ?: "")
             setSelection(text.length)
+            filters = arrayOf(android.text.InputFilter.LengthFilter(100)) //character limit for notes
         }
 
-        AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context)
             .setTitle("Note for ${call.Name ?: call.Number}")
             .setView(input)
-            .setPositiveButton("Save") { _, _ ->
+            .setPositiveButton("Save", null)
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Delete Call", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val deleteButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+            saveButton.setOnClickListener {
                 val note = input.text.toString().trim()
+                saveButton.isEnabled = false
+                deleteButton.isEnabled = false
+                cancelButton.isEnabled = false
+                saveButton.text = "Saving..."
+
                 NoteUploader(context).uploadNote(callId, note) { success ->
                     if (success) {
                         calls[position] = call.copy(Observation = note)
                         notifyItemChanged(position)
                         Toast.makeText(context, "Note saved", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
                     } else {
-                        Toast.makeText(context, "Failed to save note — check your connection", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Failed to save note", Toast.LENGTH_SHORT).show()
+                        saveButton.isEnabled = true
+                        deleteButton.isEnabled = true
+                        cancelButton.isEnabled = true
+                        saveButton.text = "Save"
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .setNeutralButton("Delete Call") { _, _ ->
+
+            deleteButton.setOnClickListener {
+                dialog.dismiss()
                 confirmDelete(context, call, position)
             }
-            .show()
+        }
+
+        dialog.show()
     }
     private fun confirmDelete(context: android.content.Context, call: Calls, position: Int) {
-        AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context)
             .setTitle("Delete this call?")
             .setMessage("This will hide it from all lists. This cannot be undone from the app.")
-            .setPositiveButton("Delete") { _, _ ->
-                val callId = call.Id ?: return@setPositiveButton
+            .setPositiveButton("Delete", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+
+            deleteButton.setOnClickListener {
+                val callId = call.Id ?: return@setOnClickListener
+                deleteButton.isEnabled = false
+                cancelButton.isEnabled = false
+                deleteButton.text = "Deleting..."
+
                 NoteUploader(context).deleteCall(callId) { success ->
                     if (success) {
                         calls.removeAt(position)
                         notifyItemRemoved(position)
                         Toast.makeText(context, "Call deleted", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
                     } else {
                         Toast.makeText(context, "Failed to delete", Toast.LENGTH_SHORT).show()
+                        deleteButton.isEnabled = true
+                        cancelButton.isEnabled = true
+                        deleteButton.text = "Delete"
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
+
+        dialog.show()
     }
 
     override fun getItemCount(): Int = calls.size

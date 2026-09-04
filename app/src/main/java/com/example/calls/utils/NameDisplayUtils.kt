@@ -9,7 +9,7 @@ import android.widget.TextView
  * Tapping the badge shows a dialog listing every known name for that number.
  */
 fun bindNames(context: Context, tvPrimaryName: TextView, tvBadge: TextView, names: List<String>) {
-    val distinctNames = names.filter { it.isNotBlank() }.distinct()
+    val distinctNames = names.filter { it.isNotBlank() && it!="Unknown" }.distinct()
     val primary = distinctNames.firstOrNull() ?: "Unknown"
     val extraCount = distinctNames.size - 1
 
