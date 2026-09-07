@@ -18,12 +18,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
 import com.example.calls.BuildConfig
+import com.example.calls.activities.AdminActivity
 
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
     private lateinit var tvCurrentName: TextView
     private lateinit var tvCurrentSim: TextView
     private lateinit var tvAppVersion: TextView
+    private var versionTapCount = 0
+    private var lastTapTime = 0L
+    private var tapToast: Toast? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -62,6 +66,22 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         view.findViewById<View>(R.id.btnClearData).setOnClickListener {
             confirmClearAppData()
         }
+        tvAppVersion.setOnClickListener {
+            val now = System.currentTimeMillis()
+            if (now - lastTapTime > 2000) {
+                versionTapCount = 0 // reset if taps are too slow/spread out
+            }
+            lastTapTime = now
+            versionTapCount++
+            tapToast?.cancel()
+            if (versionTapCount >= 5) {
+                versionTapCount = 0
+                openAdminPanel()
+            } else if (versionTapCount >= 3) {
+                tapToast = Toast.makeText(requireContext(), "${5 - versionTapCount} more taps...", Toast.LENGTH_SHORT)
+                tapToast?.show()
+            }
+        }
     }
 
     override fun onResume() {
@@ -97,5 +117,8 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+    private fun openAdminPanel() {
+        startActivity(Intent(requireContext(), AdminActivity::class.java))
     }
 }

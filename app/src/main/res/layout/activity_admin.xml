@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/background">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Admin Tools"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btnForceResync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last update time: never"
+        android:layout_marginBottom="12dp"/>
+    <Button
+        android:id="@+id/btnForceNowSync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last update time: now"
+        android:layout_marginBottom="12dp"/>
+    <Button
+        android:id="@+id/btnForceCallSync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last update time: last call WIP"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnForceUpdateCheck"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Force Update Check WIP"
+        android:layout_marginBottom="12dp"/>
+
+<!--    <Button-->
+<!--        android:id="@+id/btnOpenContactsSheet"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Open Full Spreadsheet"/>-->
+
+</LinearLayout>
