@@ -152,7 +152,8 @@ class CallUploader(private val context: Context) {
             CallLog.Calls.NUMBER,
             CallLog.Calls.TYPE,
             CallLog.Calls.DATE,
-            CallLog.Calls.PHONE_ACCOUNT_ID
+            CallLog.Calls.PHONE_ACCOUNT_ID,
+            CallLog.Calls.DURATION
         )
         val selection = "${CallLog.Calls.DATE} > ?"
         val selectionArgs = arrayOf(cutoffMillis.toString())
@@ -168,6 +169,7 @@ class CallUploader(private val context: Context) {
             val typeIdx = it.getColumnIndex(CallLog.Calls.TYPE)
             val dateIdx = it.getColumnIndex(CallLog.Calls.DATE)
             val accountIdIdx = it.getColumnIndex(CallLog.Calls.PHONE_ACCOUNT_ID)
+            val durationIdx = it.getColumnIndex(CallLog.Calls.DURATION)
 
             while (it.moveToNext()) {
                 val callPhoneAccountId = it.getString(accountIdIdx) ?: continue
@@ -177,11 +179,12 @@ class CallUploader(private val context: Context) {
                 if (!matches) continue
 
                 val millis = it.getLong(dateIdx)
+                val duration = it.getInt(durationIdx)
                 entries.add(
                     CallLogEntry(
                         name = it.getString(nameIdx) ?: "Unknown",
                         number = normalizePhoneNumber(it.getString(numberIdx) ?: ""),
-                        type = callTypeToString(it.getInt(typeIdx)),
+                        type = callTypeToString(it.getInt(typeIdx),duration),
                         date = formatMillis(millis),
                         rawMillis = millis
                     )
@@ -192,10 +195,12 @@ class CallUploader(private val context: Context) {
         return entries
     }
 
-    private fun callTypeToString(type: Int): String {
+    private fun callTypeToString(type: Int, durationSeconds: Int): String {
         return when (type) {
             CallLog.Calls.INCOMING_TYPE -> "Incoming"
-            CallLog.Calls.OUTGOING_TYPE -> "Outgoing"
+            CallLog.Calls.OUTGOING_TYPE -> {
+                if (durationSeconds <= 0) "Missed" else "Outgoing" // unanswered = missed
+            }
             CallLog.Calls.MISSED_TYPE -> "Missed"
             CallLog.Calls.REJECTED_TYPE -> "Rejected"
             CallLog.Calls.BLOCKED_TYPE -> "Blocked"
