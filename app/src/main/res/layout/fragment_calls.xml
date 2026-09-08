@@ -56,7 +56,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Write to Drive"
+                        android:text="Manual Upload"
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"/>
@@ -125,7 +125,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Read from Drive"
+                        android:text="List all calls"
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"/>
@@ -192,7 +192,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Read by Date"
+                        android:text="Filter calls by date"
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"/>

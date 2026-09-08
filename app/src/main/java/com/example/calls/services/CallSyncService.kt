@@ -14,6 +14,7 @@ import android.provider.CallLog
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.calls.R
+import com.example.calls.activities.MainActivity
 import com.example.calls.activities.WriteActivity
 import com.example.calls.data.SyncPreferences
 import com.example.calls.sync.CallUploader
@@ -179,6 +180,14 @@ class CallSyncService : Service() {
             this, 1, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val contentIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingContentIntent = PendingIntent.getActivity(
+            this, 3, contentIntent, // request code 3 — distinct from 0/1/2 already used
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Call Sync Active")
@@ -186,6 +195,7 @@ class CallSyncService : Service() {
             .setSmallIcon(R.mipmap.main_icon)
             .setOngoing(true)
             .setDeleteIntent(pendingDeleteIntent)
+            .setContentIntent(pendingContentIntent)
 
         if (showManualUpload) {
             val manualUploadIntent = Intent(this, WriteActivity::class.java).apply {
