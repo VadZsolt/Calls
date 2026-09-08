@@ -17,6 +17,7 @@ import android.content.Intent
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.example.calls.activities.ReadCallbacksActivity
+import com.example.calls.activities.SearchActivity
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -36,6 +37,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private lateinit var syncStatusIcon: ImageView
     private lateinit var tvSyncSubtitle: TextView
     private lateinit var btnReadCallbacks: MaterialCardView
+    private lateinit var btnSearchCalls: MaterialCardView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -48,6 +50,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         syncStatusIcon = view.findViewById(R.id.syncStatusIcon)
         tvSyncSubtitle = view.findViewById(R.id.tvSyncSubtitle)
         btnReadCallbacks = view.findViewById(R.id.btnReadCallbacks)
+        btnSearchCalls = view.findViewById(R.id.btnSearchCalls)
 
         switchAutoSync.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) startSyncService() else stopSyncService()
@@ -84,6 +87,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         // Read callbacks
         view.findViewById<View>(R.id.btnReadCallbacks).setOnClickListener {
             startActivity(Intent(requireContext(), ReadCallbacksActivity::class.java))
+        }
+        view.findViewById<View>(R.id.btnSearchCalls).setOnClickListener {
+            startActivity(Intent(requireContext(), SearchActivity::class.java))
         }
     }
 

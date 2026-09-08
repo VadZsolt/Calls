@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.SearchActivity"
+    android:background="@color/background">
+
+    <!-- Search bar card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/searchBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginHorizontal="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="10dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="6dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="#888888"/>
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Name, number, or uploader"
+                android:textSize="18sp"
+                android:padding="10dp"
+                android:background="@android:color/transparent"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:singleLine="true"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Search"
+                android:textSize="14sp"
+                app:cornerRadius="12dp"/>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Content area: results, empty state, or loading -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/searchBarLayout"
+        android:layout_marginTop="16dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/searchEmptyState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="#000000"/>
+
+            <TextView
+                android:id="@+id/tvSearchEmptyState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Search by name, number, or uploader"
+                android:textSize="15sp"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                android:gravity="center"/>
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/searchProgressLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#40000000"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/searchProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"/>
+
+        </RelativeLayout>
+
+    </FrameLayout>
+
+</RelativeLayout>

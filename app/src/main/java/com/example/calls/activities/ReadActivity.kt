@@ -17,6 +17,8 @@ import com.example.calls.models.Calls
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.calls.sync.VolleySingleton
 
 class ReadActivity : AppCompatActivity() {
@@ -39,6 +41,12 @@ class ReadActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_read)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
 
         readProgressLayout = findViewById(R.id.readProgressLayout)
         readProgressBar = findViewById(R.id.readProgressBar)
