@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.telephony.SubscriptionManager
-import android.view.Gravity
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -33,6 +32,7 @@ import kotlinx.coroutines.launch
 import android.os.Build
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.OnBackPressedCallback
 import com.example.calls.update.AppUpdater
 import com.example.calls.update.UpdateInfo
 
@@ -95,6 +95,30 @@ class MainActivity : AppCompatActivity() {
             navView.setCheckedItem(R.id.nav_main)
             toolbar.title = "Home"
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                when {
+                    drawerLayout.isDrawerOpen(GravityCompat.START) -> {
+                        drawerLayout.closeDrawer(GravityCompat.START)
+                    }
+                    supportFragmentManager.findFragmentById(R.id.fragmentContainer) !is MainFragment -> {
+                        // Not on Home — go back to Home instead of exiting
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.fragmentContainer, MainFragment())
+                            .commit()
+                        toolbar.title = "Home"
+                        // Optional: keep the drawer's checked item in sync
+                        navView.setCheckedItem(R.id.nav_main)
+                    }
+                    else -> {
+                        // Already on Home, and drawer is closed — let the system handle it (exit app)
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            }
+        })
 
         checkUploaderName()
         checkForAppUpdate()
