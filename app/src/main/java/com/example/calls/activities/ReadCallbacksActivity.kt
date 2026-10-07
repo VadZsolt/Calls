@@ -144,6 +144,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
             var names: List<String> = emptyList(),
             var resolved: Boolean = false,
             var observation: String? = null,
+            var uploader: String? = null,
             var id: String? = null
         )
 
@@ -155,6 +156,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
             val type = call.Type ?: continue
             val callId = call.Id ?: continue
             val observation = call.Observation ?: continue
+            val uploader = call.Uploader ?: continue
 
             val tracker = byNumber.getOrPut(number) { Tracker() }
 
@@ -166,6 +168,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     tracker.names = call.Names.ifEmpty { tracker.names }
                     tracker.resolved = false
                     tracker.observation = observation
+                    tracker.uploader = uploader
                     tracker.id = callId
                 }
             } else if (type == "Outgoing" || type == "Incoming") {
@@ -190,7 +193,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     Number = number,
                     Name = tracker.name,
                     Type = tracker.lastMissedType,
-                    Uploader = null,
+                    Uploader = tracker.uploader,
                     Names = tracker.names,
                     Observation = tracker.observation
                 )
