@@ -15,8 +15,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.calls.R
 import com.example.calls.activities.MainActivity
+import com.example.calls.activities.ReadActivity
 import com.example.calls.activities.WriteActivity
 import com.example.calls.data.SyncPreferences
+import com.example.calls.fragments.CallsFragment
 import com.example.calls.sync.CallUploader
 import com.example.calls.sync.SyncResult
 import kotlinx.coroutines.CoroutineScope
@@ -180,7 +182,7 @@ class CallSyncService : Service() {
             this, 1, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val contentIntent = Intent(this, MainActivity::class.java).apply {
+        val contentIntent = Intent(this, ReadActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingContentIntent = PendingIntent.getActivity(

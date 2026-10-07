@@ -127,7 +127,7 @@ class CallUploader(private val context: Context) {
                 }
             }
 
-            stringRequest.retryPolicy = DefaultRetryPolicy(8000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            stringRequest.retryPolicy = DefaultRetryPolicy(6000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
             stringRequest.setShouldCache(false)
             requestQueue.add(stringRequest)
         }

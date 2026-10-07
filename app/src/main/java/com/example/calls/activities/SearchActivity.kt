@@ -20,8 +20,10 @@ import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.calls.R
 import com.example.calls.adapters.CallsAdapter
+import com.example.calls.models.CallListItem
 import com.example.calls.models.Calls
 import com.example.calls.sync.VolleySingleton
+import com.example.calls.utils.groupCallsByDay
 import java.net.URLEncoder
 
 class SearchActivity : AppCompatActivity() {
@@ -38,7 +40,7 @@ class SearchActivity : AppCompatActivity() {
 
     private lateinit var adapter: CallsAdapter
     private lateinit var layoutManager: LinearLayoutManager
-    private val calls = arrayListOf<Calls>()
+    private val displayedItems = mutableListOf<CallListItem>() // CHANGED type
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +63,7 @@ class SearchActivity : AppCompatActivity() {
         layoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = layoutManager
 
-        adapter = CallsAdapter(calls)
+        adapter = CallsAdapter(displayedItems) // CHANGED
         recyclerView.adapter = adapter
 
         searchProgressLayout.visibility = View.GONE
@@ -78,6 +80,7 @@ class SearchActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun performSearch() {
         val query = etSearch.text.toString().trim()
         if (query.isEmpty()) {
@@ -121,12 +124,11 @@ class SearchActivity : AppCompatActivity() {
                     )
                 }
 
-                calls.clear()
-                calls.addAll(results)
+                displayedItems.clear()
+                displayedItems.addAll(groupCallsByDay(results)) // CHANGED
                 adapter.notifyDataSetChanged()
 
                 searchProgressLayout.visibility = View.GONE
-                recyclerView.visibility = View.VISIBLE
 
                 if (results.isEmpty()) {
                     searchEmptyState.visibility = View.VISIBLE

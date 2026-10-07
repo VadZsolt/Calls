@@ -10,7 +10,6 @@ import com.android.volley.Request
 import com.android.volley.Request.Priority
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.adapters.CallsAdapter
 import com.example.calls.models.Calls
@@ -19,7 +18,9 @@ import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.calls.models.CallListItem
 import com.example.calls.sync.VolleySingleton
+import com.example.calls.utils.groupCallsByDay
 
 class ReadActivity : AppCompatActivity() {
 
@@ -30,13 +31,14 @@ class ReadActivity : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
     lateinit var swipeRefresh: SwipeRefreshLayout
 
-    private val calls = arrayListOf<Calls>()
+    private val calls = arrayListOf<Calls>()              // the flat, ungrouped source of truth
+    private val displayedItems = mutableListOf<CallListItem>() // what the adapter actually shows (calls + headers)
     private lateinit var adapter: CallsAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
     private var isLoading = false
     private var hasMore = true
-    private var hasLoadedOnce = false // tracks whether the very first load has already happened
+    private var hasLoadedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +49,6 @@ class ReadActivity : AppCompatActivity() {
             insets
         }
 
-
         readProgressLayout = findViewById(R.id.readProgressLayout)
         readProgressBar = findViewById(R.id.readProgressBar)
         recyclerView = findViewById(R.id.recyclerView)
@@ -56,7 +57,7 @@ class ReadActivity : AppCompatActivity() {
         layoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = layoutManager
 
-        adapter = CallsAdapter(calls)
+        adapter = CallsAdapter(displayedItems)
         recyclerView.adapter = adapter
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -78,16 +79,22 @@ class ReadActivity : AppCompatActivity() {
             refreshList()
         }
 
-        loadNextPage() // initial load — will show the full overlay since hasLoadedOnce is false
+        loadNextPage()
     }
 
     private fun refreshList() {
-        val previousSize = calls.size
         calls.clear()
-        adapter.notifyItemRangeRemoved(0, previousSize)
+        rebuildDisplayedItems()
         hasMore = true
         isLoading = false
         loadNextPage()
+    }
+
+    /** Rebuilds the grouped (header + call) list from the flat `calls` list, and refreshes the adapter. */
+    private fun rebuildDisplayedItems() {
+        displayedItems.clear()
+        displayedItems.addAll(groupCallsByDay(calls))
+        adapter.notifyDataSetChanged()
     }
 
     private fun loadNextPage() {
@@ -135,10 +142,9 @@ class ReadActivity : AppCompatActivity() {
                         )
                     }
 
-                    val startPos = calls.size
                     calls.addAll(newCalls)
                     calls.sortByDescending { it.Date }
-                    adapter.notifyItemRangeInserted(startPos, newCalls.size)
+                    rebuildDisplayedItems() // NEW — regroup with headers after every page load
 
                     hasMore = response.optBoolean("hasMore", false) && newCalls.isNotEmpty()
                 } catch (e: Exception) {

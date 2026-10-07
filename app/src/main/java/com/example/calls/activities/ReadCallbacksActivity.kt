@@ -15,16 +15,16 @@ import com.android.volley.Request
 import com.android.volley.Request.Priority
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
 import com.example.calls.R
 import com.example.calls.adapters.CallsAdapter
 import com.example.calls.models.Calls
 import com.example.calls.sync.VolleySingleton
+import com.example.calls.utils.groupCallsByDay
 import java.util.Calendar
 
 class ReadCallbacksActivity : AppCompatActivity() {
 
-    private val DAYS_TO_CHECK = 2
+    private val DAYS_TO_CHECK = 1
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar
@@ -106,7 +106,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     recyclerView.visibility = View.GONE
                 } else {
                     tvEmptyState.visibility = View.GONE
-                    recyclerView.adapter = CallsAdapter(callbacksNeeded)
+                    recyclerView.adapter = CallsAdapter(groupCallsByDay(callbacksNeeded).toMutableList()) // CHANGED
                     recyclerView.visibility = View.VISIBLE
                 }
             },
@@ -126,6 +126,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
     }
 
     private fun computeCallbacksNeeded(allCalls: List<Calls>, days: Int): MutableList<Calls> {
+        // ... unchanged, exactly as you have it ...
         val sortedCalls = allCalls.sortedBy { it.Date }
 
         val allowedDays = mutableSetOf<String>()

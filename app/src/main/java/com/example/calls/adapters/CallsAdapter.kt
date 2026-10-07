@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -15,12 +14,20 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calls.R
+import com.example.calls.models.CallListItem
 import com.example.calls.models.Calls
 import com.example.calls.sync.NoteUploader
 import com.example.calls.utils.bindNames
 
-class CallsAdapter(private val calls: MutableList<Calls>) :
-    RecyclerView.Adapter<CallsAdapter.CallViewHolder>() {
+private const val VIEW_TYPE_HEADER = 0
+private const val VIEW_TYPE_CALL = 1
+
+class CallsAdapter(private val items: MutableList<CallListItem>) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tvDateHeader: TextView = itemView.findViewById(R.id.tvDateHeader)
+    }
 
     class CallViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val container: LinearLayout = itemView.findViewById(R.id.callItemContainer)
@@ -31,18 +38,37 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
         val tvUploader: TextView = itemView.findViewById(R.id.tvUploader)
         val tvObservation: TextView = itemView.findViewById(R.id.tvObservation)
         val cardCall: CardView = itemView.findViewById(R.id.cardCall)
-
         val tvNameBadge: TextView = itemView.findViewById(R.id.tvNameBadge)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CallViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_call, parent, false)
-        return CallViewHolder(view)
+    override fun getItemViewType(position: Int): Int {
+        return when (items[position]) {
+            is CallListItem.Header -> VIEW_TYPE_HEADER
+            is CallListItem.CallRow -> VIEW_TYPE_CALL
+        }
     }
 
-    override fun onBindViewHolder(holder: CallViewHolder, position: Int) {
-        val call = calls[position]
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == VIEW_TYPE_HEADER) {
+            HeaderViewHolder(inflater.inflate(R.layout.item_date_header, parent, false))
+        } else {
+            CallViewHolder(inflater.inflate(R.layout.item_call, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = items[position]) {
+            is CallListItem.Header -> {
+                (holder as HeaderViewHolder).tvDateHeader.text = item.dayLabel
+            }
+            is CallListItem.CallRow -> {
+                bindCall(holder as CallViewHolder, item.call, position)
+            }
+        }
+    }
+
+    private fun bindCall(holder: CallViewHolder, call: Calls, position: Int) {
         holder.tvName.text = call.Name
         holder.tvNumber.text = call.Number
         holder.tvDate.text = call.Date
@@ -65,45 +91,34 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
             else -> R.color.call_default
         }
 
-        holder.container.setBackgroundColor(
-            ContextCompat.getColor(holder.container.context, colorRes)
-        )
-        holder.cardCall.setCardBackgroundColor(
-            ContextCompat.getColorStateList(holder.cardCall.context, colorRes)
-        )
+        holder.container.setBackgroundColor(ContextCompat.getColor(holder.container.context, colorRes))
+        holder.cardCall.setCardBackgroundColor(ContextCompat.getColorStateList(holder.cardCall.context, colorRes))
+
         holder.container.setOnClickListener { view ->
             view.animate()
-                .scaleX(0.95f)
-                .scaleY(0.95f)
-                .setDuration(100)
+                .scaleX(0.95f).scaleY(0.95f).setDuration(100)
                 .withEndAction {
-                    view.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(100)
+                    view.animate().scaleX(1f).scaleY(1f).setDuration(100)
                         .withEndAction {
                             val rawNumber = call.Number?.removePrefix("'") ?: return@withEndAction
-
-                            val intent = Intent(Intent.ACTION_DIAL).apply {
-                                data = Uri.parse("tel:$rawNumber")
-                            }
-
+                            val intent = Intent(Intent.ACTION_DIAL).apply { data = Uri.parse("tel:$rawNumber") }
                             view.context.startActivity(intent)
-                        }
-                        .start()
-                }
-                .start()
+                        }.start()
+                }.start()
         }
+
         holder.container.setOnLongClickListener { view ->
             showNoteDialog(view.context, call, position)
             true
         }
+
         bindNames(holder.itemView.context, holder.tvName, holder.tvNameBadge, call.Names.ifEmpty { listOf(call.Name ?: "Unknown") })
     }
+
     private fun showNoteDialog(context: android.content.Context, call: Calls, position: Int) {
         val callId = call.Id
         if (callId.isNullOrBlank()) {
-            Toast.makeText(context, "Can't add a note to this call", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Can't modify this call", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -111,7 +126,7 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
             hint = "Add a short note about this call"
             setText(call.Observation ?: "")
             setSelection(text.length)
-            filters = arrayOf(android.text.InputFilter.LengthFilter(100)) //character limit for notes
+            filters = arrayOf(android.text.InputFilter.LengthFilter(200))
         }
 
         val dialog = AlertDialog.Builder(context)
@@ -136,8 +151,11 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
 
                 NoteUploader(context).uploadNote(callId, note) { success ->
                     if (success) {
-                        calls[position] = call.copy(Observation = note)
-                        notifyItemChanged(position)
+                        val currentItem = items[position]
+                        if (currentItem is CallListItem.CallRow) {
+                            items[position] = CallListItem.CallRow(currentItem.call.copy(Observation = note))
+                            notifyItemChanged(position)
+                        }
                         Toast.makeText(context, "Note saved", Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
                     } else {
@@ -158,6 +176,7 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
 
         dialog.show()
     }
+
     private fun confirmDelete(context: android.content.Context, call: Calls, position: Int) {
         val dialog = AlertDialog.Builder(context)
             .setTitle("Delete this call?")
@@ -178,7 +197,7 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
 
                 NoteUploader(context).deleteCall(callId) { success ->
                     if (success) {
-                        calls.removeAt(position)
+                        items.removeAt(position)
                         notifyItemRemoved(position)
                         Toast.makeText(context, "Call deleted", Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
@@ -195,5 +214,5 @@ class CallsAdapter(private val calls: MutableList<Calls>) :
         dialog.show()
     }
 
-    override fun getItemCount(): Int = calls.size
+    override fun getItemCount(): Int = items.size
 }
