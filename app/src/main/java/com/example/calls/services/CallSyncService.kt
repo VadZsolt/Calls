@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 class CallSyncService : Service() {
 
@@ -70,6 +72,16 @@ class CallSyncService : Service() {
         }
     }
 
+    private fun startVerifier() {
+        serviceScope.launch {
+            while (isActive) {
+                delay(10 * 60 * 1000L)
+                val repaired = callUploader.verifyAndRepair()
+                if (repaired > 0) updateNotification("Repaired $repaired missing call(s)")
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         _isRunning.value = true
@@ -106,6 +118,7 @@ class CallSyncService : Service() {
         )
 
         triggerSync()
+        startVerifier()
     }
 
     private fun triggerSync() {

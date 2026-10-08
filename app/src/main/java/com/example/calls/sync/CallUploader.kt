@@ -8,13 +8,16 @@ import android.provider.CallLog
 import androidx.core.content.ContextCompat
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
+import com.android.volley.Request.Priority
 import com.android.volley.RequestQueue
 import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
 import com.example.calls.R
 import com.example.calls.data.SyncPreferences
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -61,6 +64,11 @@ class CallUploader(private val context: Context) {
 
             val uploaderName = SyncPreferences.getUploaderName(context).first() ?: "Unknown"
             val lastSyncMillis = SyncPreferences.getLastSyncMillis(context).first()
+
+            val currentMillis = System.currentTimeMillis()
+
+            if((currentMillis-lastSyncMillis) > 3L * 24 * 60 * 60 * 1000) //3 day 24 hours 60 minutes 60 seconds 1000 milliseconds
+                SyncPreferences.setLastSyncMillis(context, currentMillis)
 
             val cutoffMillis = if (lastSyncMillis > 0L) {
                 lastSyncMillis
@@ -125,8 +133,8 @@ class CallUploader(private val context: Context) {
                     params["Uploader"] = uploaderName
                     return params
                 }
+                override fun getPriority(): Priority = Priority.IMMEDIATE
             }
-
             stringRequest.retryPolicy = DefaultRetryPolicy(6000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
             stringRequest.setShouldCache(false)
             requestQueue.add(stringRequest)
@@ -226,4 +234,58 @@ class CallUploader(private val context: Context) {
             else -> number
         }
     }
+
+    suspend fun verifyAndRepair(): Int {
+        // Same lock as syncNow(), so the two can never run at the same time
+        if (!isSyncing.compareAndSet(false, true)) return 0
+
+        try {
+            val simAccountId = SyncPreferences.getSimAccountId(context).first()
+            if (simAccountId.isNullOrBlank()) return 0
+
+            val uploaderName = SyncPreferences.getUploaderName(context).first() ?: "Unknown"
+            val lastSyncMillis = SyncPreferences.getLastSyncMillis(context).first()
+            if (lastSyncMillis <= 0L) return 0
+
+            val oneDaysAgo = System.currentTimeMillis() - 1L * 24 * 60 * 60 * 1000
+            val candidates = readCallLogsSince(oneDaysAgo, simAccountId)
+                .filter { it.rawMillis <= lastSyncMillis } // newer ones belong to the normal sync
+                .takeLast(30)
+            if (candidates.isEmpty()) return 0
+
+            // If the check itself fails, do nothing. Never upload on uncertainty.
+            val uploadedKeys = fetchUploadedKeys(uploaderName) ?: return 0
+
+            val missing = candidates.filter { verifyKey(it) !in uploadedKeys }
+
+            var repaired = 0
+            for (entry in missing) {
+                if (sendSingleCallSuspend(entry, uploaderName)) repaired++ else break
+            }
+            return repaired
+        } finally {
+            isSyncing.set(false)
+        }
+    }
+
+    private fun verifyKey(entry: CallLogEntry): String =
+        entry.date + "|" + entry.number.filter { it.isDigit() }.takeLast(9)
+
+    private suspend fun fetchUploadedKeys(uploader: String): Set<String>? =
+        suspendCancellableCoroutine { cont ->
+            val encoded = URLEncoder.encode(uploader, "UTF-8")
+            val request = JsonObjectRequest(
+                Request.Method.GET, "$url?action=verify&uploader=$encoded", null,
+                { response ->
+                    val set = HashSet<String>()
+                    val arr = response.optJSONArray("keys")
+                    if (arr != null) for (i in 0 until arr.length()) set.add(arr.getString(i))
+                    if (cont.isActive) cont.resume(set)
+                },
+                { if (cont.isActive) cont.resume(null) }
+            )
+            request.retryPolicy = DefaultRetryPolicy(15000, 2, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            request.setShouldCache(false)
+            requestQueue.add(request)
+        }
 }
