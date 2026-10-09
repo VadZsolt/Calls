@@ -33,6 +33,7 @@ import android.os.Build
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.OnBackPressedCallback
+import com.example.calls.services.CallSyncService
 import com.example.calls.update.AppUpdater
 import com.example.calls.update.UpdateInfo
 
@@ -122,6 +123,7 @@ class MainActivity : AppCompatActivity() {
 
         checkUploaderName()
         checkForAppUpdate()
+        autoStartSyncIfEnabled()
     }
 
     override fun onResume() {
@@ -314,5 +316,21 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Download failed: $message", Toast.LENGTH_LONG).show()
             }
         )
+    }
+    private fun autoStartSyncIfEnabled() {
+        lifecycleScope.launch {
+            val enabled = SyncPreferences.getKeepAutoSync(this@MainActivity).first()
+            if (!enabled || CallSyncService.isRunning.value) return@launch
+
+            // Don't start before onboarding is done, or the service just says "No SIM selected"
+            val name = SyncPreferences.getUploaderName(this@MainActivity).first()
+            val sim = SyncPreferences.getSimAccountId(this@MainActivity).first()
+            if (name.isNullOrBlank() || sim.isNullOrBlank()) return@launch
+
+            ContextCompat.startForegroundService(
+                this@MainActivity,
+                Intent(this@MainActivity, CallSyncService::class.java)
+            )
+        }
     }
 }

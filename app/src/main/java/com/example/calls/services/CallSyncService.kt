@@ -197,6 +197,7 @@ class CallSyncService : Service() {
         )
         val contentIntent = Intent(this, ReadActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("from_notification", true)
         }
         val pendingContentIntent = PendingIntent.getActivity(
             this, 3, contentIntent, // request code 3 — distinct from 0/1/2 already used

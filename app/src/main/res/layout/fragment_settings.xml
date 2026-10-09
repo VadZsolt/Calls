@@ -119,6 +119,33 @@
                 android:orientation="vertical">
 
                 <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Keep auto-sync on"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="@color/black"/>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchKeepAutoSync"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#15000000"/>
+
+                <LinearLayout
                     android:id="@+id/btnResetSim"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

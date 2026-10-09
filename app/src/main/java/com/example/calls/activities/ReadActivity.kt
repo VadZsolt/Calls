@@ -1,5 +1,6 @@
 package com.example.calls.activities
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,7 @@ import com.example.calls.models.Calls
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.calls.models.CallListItem
@@ -78,8 +80,22 @@ class ReadActivity : AppCompatActivity() {
         swipeRefresh.setOnRefreshListener {
             refreshList()
         }
-
         loadNextPage()
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (intent.getBooleanExtra("from_notification", false)) {
+                    // Came from the notification → go to MainActivity with the right fragment
+                    startActivity(Intent(this@ReadActivity, MainActivity::class.java).apply {
+                        putExtra("open_fragment", "calls")   // change to your real tag
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    })
+                    finish()
+                } else {
+                    isEnabled = false          // temporarily disable this callback
+                    onBackPressedDispatcher.onBackPressed()  // let the system finish the Activity
+                }
+            }
+        })
     }
 
     private fun refreshList() {
@@ -169,7 +185,7 @@ class ReadActivity : AppCompatActivity() {
             override fun getPriority(): Priority = Priority.HIGH
         }
         jsonObjectRequest.retryPolicy = com.android.volley.DefaultRetryPolicy(
-            8000, 1, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+            8000, 2, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
         )
 
         queue.add(jsonObjectRequest)

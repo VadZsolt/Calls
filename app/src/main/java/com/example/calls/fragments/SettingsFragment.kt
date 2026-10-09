@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.calls.R
@@ -19,6 +20,8 @@ import kotlinx.coroutines.launch
 import androidx.core.net.toUri
 import com.example.calls.BuildConfig
 import com.example.calls.activities.AdminActivity
+import com.example.calls.services.CallSyncService
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
@@ -80,6 +83,22 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             } else if (versionTapCount >= 3) {
                 tapToast = Toast.makeText(requireContext(), "${5 - versionTapCount} more taps...", Toast.LENGTH_SHORT)
                 tapToast?.show()
+            }
+        }
+        val ctx = requireContext()
+        val switchKeep = view.findViewById<SwitchMaterial>(R.id.switchKeepAutoSync)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            switchKeep.isChecked = SyncPreferences.getKeepAutoSync(ctx).first()
+
+            // Attach the listener AFTER setting the initial state, so it doesn't fire for that
+            switchKeep.setOnCheckedChangeListener { _, isChecked ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    SyncPreferences.setKeepAutoSync(ctx, isChecked)
+                }
+                if (isChecked && !CallSyncService.isRunning.value) {
+                    ContextCompat.startForegroundService(ctx, Intent(ctx, CallSyncService::class.java))
+                }
             }
         }
     }
