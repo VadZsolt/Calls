@@ -207,7 +207,7 @@ class CallUploader(private val context: Context) {
         return when (type) {
             CallLog.Calls.INCOMING_TYPE -> "Incoming"
             CallLog.Calls.OUTGOING_TYPE -> {
-                if (durationSeconds <= 0) "Missed" else "Outgoing" // unanswered = missed
+                if (durationSeconds <= 0) "Unanswered" else "Outgoing" // unanswered = missed
             }
             CallLog.Calls.MISSED_TYPE -> "Missed"
             CallLog.Calls.REJECTED_TYPE -> "Rejected"

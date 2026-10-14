@@ -26,7 +26,7 @@ import com.example.calls.utils.groupCallsByDay
 
 class ReadActivity : AppCompatActivity() {
 
-    private val PAGE_SIZE = 40
+    private val PAGE_SIZE = 60
 
     lateinit var readProgressLayout: RelativeLayout
     lateinit var readProgressBar: ProgressBar

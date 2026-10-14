@@ -322,7 +322,6 @@ class MainActivity : AppCompatActivity() {
             val enabled = SyncPreferences.getKeepAutoSync(this@MainActivity).first()
             if (!enabled || CallSyncService.isRunning.value) return@launch
 
-            // Don't start before onboarding is done, or the service just says "No SIM selected"
             val name = SyncPreferences.getUploaderName(this@MainActivity).first()
             val sim = SyncPreferences.getSimAccountId(this@MainActivity).first()
             if (name.isNullOrBlank() || sim.isNullOrBlank()) return@launch

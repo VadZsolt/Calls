@@ -161,7 +161,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
 
             val tracker = byNumber.getOrPut(number) { Tracker() }
 
-            if (type == "Missed" || type == "Rejected") {
+            if (type == "Missed" || type == "Rejected" || type == "Unanswered") {
                 if (tracker.lastMissedDate == null || date > tracker.lastMissedDate!!) {
                     tracker.lastMissedDate = date
                     tracker.lastMissedType = type
@@ -172,6 +172,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     tracker.uploader = uploader
                     tracker.id = callId
                 }
+                if(observation == "DELETE")
+                    tracker.resolved = true
             } else if (type == "Outgoing" || type == "Incoming") {
                 if (tracker.lastMissedDate != null && date > tracker.lastMissedDate!!) {
                     tracker.resolved = true

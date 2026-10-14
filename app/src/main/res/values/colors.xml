@@ -12,6 +12,7 @@
     <color name="call_incoming">#4CAF50</color>
     <color name="call_outgoing">#2196F3</color>
     <color name="call_missed">#F44336</color>
+    <color name="call_unanswered">#A44336</color>
     <color name="call_rejected">#FF9800</color>
     <color name="call_voicemail">#9C27B0</color>
     <color name="call_default">#757575</color>
