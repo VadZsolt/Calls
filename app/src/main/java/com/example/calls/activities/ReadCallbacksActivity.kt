@@ -169,7 +169,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     tracker.names = call.Names.ifEmpty { tracker.names }
                     tracker.resolved = false
                     tracker.observation = observation
-                    tracker.uploader = uploader
+                    if(tracker.uploader == null){
+                        tracker.uploader = uploader
+                    }
                     tracker.id = callId
                 }
                 if(observation == "DELETE")
