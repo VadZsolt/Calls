@@ -112,10 +112,10 @@ class CallUploader(private val context: Context) {
 
             val stringRequest = object : StringRequest(
                 Request.Method.POST, url,
-                Response.Listener {
+                Response.Listener { response ->
                     if (!callbackFired) {
                         callbackFired = true
-                        if (continuation.isActive) continuation.resume(true)
+                        if (continuation.isActive) continuation.resume(response.trim() =="Success")
                     }
                 },
                 Response.ErrorListener {
@@ -135,7 +135,7 @@ class CallUploader(private val context: Context) {
                 }
                 override fun getPriority(): Priority = Priority.IMMEDIATE
             }
-            stringRequest.retryPolicy = DefaultRetryPolicy(6000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            stringRequest.retryPolicy = DefaultRetryPolicy(8000, 2, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
             stringRequest.setShouldCache(false)
             requestQueue.add(stringRequest)
         }
