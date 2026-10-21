@@ -89,6 +89,7 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
             "Unanswered" -> R.color.call_unanswered
             "Rejected" -> R.color.call_rejected
             "Voicemail" -> R.color.call_voicemail
+            "Assigned" -> R.color.call_assigned
             else -> R.color.call_default
         }
 
