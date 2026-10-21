@@ -8,5 +8,7 @@ data class Calls(
     val Type: String? = null,
     val Uploader: String? = null,
     val Names: List<String> = emptyList(),
-    val Observation: String? = null
+    val Observation: String? = null,
+    val Comment: String? = null,
+    val Duration: Int? = null
 )

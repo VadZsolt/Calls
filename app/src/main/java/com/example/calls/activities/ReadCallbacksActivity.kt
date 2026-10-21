@@ -125,6 +125,11 @@ class ReadCallbacksActivity : AppCompatActivity() {
         queue.add(jsonObjectRequest)
     }
 
+    private val assigneeRegex = Regex("^(.+?) needs to call back\\s*\$", RegexOption.IGNORE_CASE)
+
+    /** "Josh needs to call back" -> "Josh" ("" when the text does not have that form). */
+    private fun assigneeOf(observation: String): String =
+        assigneeRegex.find(observation)?.groupValues?.get(1)?.trim() ?: ""
     private fun computeCallbacksNeeded(allCalls: List<Calls>, days: Int): MutableList<Calls> {
         // ... unchanged, exactly as you have it ...
         val sortedCalls = allCalls.sortedBy { it.Date }
@@ -146,7 +151,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
             var resolved: Boolean = false,
             var observation: String? = null,
             var uploader: String? = null,
-            var id: String? = null
+            var id: String? = null,
+            var assignee: String? = null
         )
 
         val byNumber = mutableMapOf<String, Tracker>()
@@ -162,6 +168,10 @@ class ReadCallbacksActivity : AppCompatActivity() {
             val tracker = byNumber.getOrPut(number) { Tracker() }
 
             if (type == "Missed" || type == "Rejected" || type == "Unanswered" || type == "Assigned") {
+
+                if (tracker.lastMissedDate == null || tracker.resolved) tracker.assignee = ""
+                if (type == "Assigned") tracker.assignee = assigneeOf(observation)
+
                 if (tracker.lastMissedDate == null || date > tracker.lastMissedDate!!) {
                     tracker.lastMissedDate = date
                     tracker.lastMissedType = type
@@ -183,7 +193,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     tracker.resolved = true
             } else if (type == "Outgoing" || type == "Incoming") {
                 if (tracker.lastMissedDate != null && date > tracker.lastMissedDate!!) {
-                    tracker.resolved = true
+                    // an assigned callback is only done when the assigned person talked to the client
+                    if (tracker.assignee!!.isEmpty() || tracker.assignee.equals(uploader, ignoreCase = true))
+                        tracker.resolved = true
                 }
             }
         }

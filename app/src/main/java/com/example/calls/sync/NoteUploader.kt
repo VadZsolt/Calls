@@ -7,6 +7,9 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.calls.R
+import com.example.calls.data.SyncPreferences
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class NoteUploader(private val context: Context) {
 
@@ -24,6 +27,7 @@ class NoteUploader(private val context: Context) {
                 val params = HashMap<String, String>()
                 params["id"] = callId
                 params["note"] = note
+                params["modified"] = runBlocking { SyncPreferences.getUploaderName(context).first() } ?: " "
                 return params
             }
         }
@@ -43,6 +47,7 @@ class NoteUploader(private val context: Context) {
             override fun getParams(): MutableMap<String, String> {
                 val params = HashMap<String, String>()
                 params["id"] = callId
+                params["modified"] = runBlocking { SyncPreferences.getUploaderName(context).first() } ?: " "
                 return params
             }
         }

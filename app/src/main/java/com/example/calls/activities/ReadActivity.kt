@@ -59,7 +59,7 @@ class ReadActivity : AppCompatActivity() {
         layoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = layoutManager
 
-        adapter = CallsAdapter(displayedItems)
+        adapter = CallsAdapter(displayedItems, showDuration = true)
         recyclerView.adapter = adapter
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -153,7 +153,9 @@ class ReadActivity : AppCompatActivity() {
                                 obj.getString("Type"),
                                 obj.optString("Uploader", ""),
                                 Names = names,
-                                obj.optString("Observation", "")
+                                obj.optString("Observation", ""),
+                                Duration = obj.optInt("Duration", 0),
+                                Comment = obj.optString("Comment", "")
                             )
                         )
                     }

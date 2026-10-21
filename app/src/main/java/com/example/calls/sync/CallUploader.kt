@@ -50,7 +50,8 @@ class CallUploader(private val context: Context) {
         val number: String,
         val type: String,
         val date: String,
-        val rawMillis: Long
+        val rawMillis: Long,
+        val durationSeconds: Int
     )
 
     suspend fun syncNow(): SyncResult {
@@ -131,6 +132,7 @@ class CallUploader(private val context: Context) {
                     params["Name"] = entry.name
                     params["Type"] = entry.type
                     params["Uploader"] = uploaderName
+                    params["Duration"] = entry.durationSeconds.toString()
                     return params
                 }
                 override fun getPriority(): Priority = Priority.IMMEDIATE
@@ -194,7 +196,8 @@ class CallUploader(private val context: Context) {
                         number = normalizePhoneNumber(it.getString(numberIdx) ?: ""),
                         type = callTypeToString(it.getInt(typeIdx),duration),
                         date = formatMillis(millis),
-                        rawMillis = millis
+                        rawMillis = millis,
+                        durationSeconds = duration
                     )
                 )
             }

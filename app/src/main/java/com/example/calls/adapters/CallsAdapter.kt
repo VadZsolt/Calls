@@ -22,7 +22,7 @@ import com.example.calls.utils.bindNames
 private const val VIEW_TYPE_HEADER = 0
 private const val VIEW_TYPE_CALL = 1
 
-class CallsAdapter(private val items: MutableList<CallListItem>) :
+class CallsAdapter(private val items: MutableList<CallListItem>, private val showDuration : Boolean = false) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -39,6 +39,7 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
         val tvObservation: TextView = itemView.findViewById(R.id.tvObservation)
         val cardCall: CardView = itemView.findViewById(R.id.cardCall)
         val tvNameBadge: TextView = itemView.findViewById(R.id.tvNameBadge)
+        val tvDuration: TextView = itemView.findViewById(R.id.tvDuration)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -75,8 +76,16 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
         holder.tvType.text = call.Type
         holder.tvUploader.text = call.Uploader
 
-        if (!call.Observation.isNullOrBlank()) {
-            holder.tvObservation.text = "📝 ${call.Observation}"
+        val seconds = call.Duration
+        if (showDuration && seconds != null && seconds > 0) {
+            holder.tvDuration.text = formatDuration(seconds)
+            holder.tvDuration.visibility = View.VISIBLE
+        } else {
+            holder.tvDuration.visibility = View.GONE
+        }
+
+        if (!call.Comment.isNullOrBlank()) {
+            holder.tvObservation.text = "📝 ${call.Observation}" + "| ${call.Comment}"
             holder.tvObservation.visibility = View.VISIBLE
         } else {
             holder.tvObservation.visibility = View.GONE
@@ -126,7 +135,7 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
 
         val input = EditText(context).apply {
             hint = "Add a short note about this call"
-            setText(call.Observation ?: "")
+            setText(call.Comment ?: "")
             setSelection(text.length)
             filters = arrayOf(android.text.InputFilter.LengthFilter(200))
         }
@@ -136,7 +145,7 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
             .setView(input)
             .setPositiveButton("Save", null)
             .setNegativeButton("Cancel", null)
-            .setNeutralButton("Delete Call", null)
+            .setNeutralButton("Called back", null)
             .create()
 
         dialog.setOnShowListener {
@@ -155,7 +164,7 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
                     if (success) {
                         val currentItem = items[position]
                         if (currentItem is CallListItem.CallRow) {
-                            items[position] = CallListItem.CallRow(currentItem.call.copy(Observation = note))
+                            items[position] = CallListItem.CallRow(currentItem.call.copy(Comment = note))
                             notifyItemChanged(position)
                         }
                         Toast.makeText(context, "Note saved", Toast.LENGTH_SHORT).show()
@@ -181,9 +190,9 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
 
     private fun confirmDelete(context: android.content.Context, call: Calls, position: Int) {
         val dialog = AlertDialog.Builder(context)
-            .setTitle("Delete this call?")
+            .setTitle("Called back already?")
             .setMessage("This will hide it from all lists. This cannot be undone from the app.")
-            .setPositiveButton("Delete", null)
+            .setPositiveButton("Yes", null)
             .setNegativeButton("Cancel", null)
             .create()
 
@@ -195,19 +204,19 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
                 val callId = call.Id ?: return@setOnClickListener
                 deleteButton.isEnabled = false
                 cancelButton.isEnabled = false
-                deleteButton.text = "Deleting..."
+                deleteButton.text = "Modifying..."
 
                 NoteUploader(context).deleteCall(callId) { success ->
                     if (success) {
                         items.removeAt(position)
                         notifyItemRemoved(position)
-                        Toast.makeText(context, "Call deleted", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Called back", Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
                     } else {
-                        Toast.makeText(context, "Failed to delete", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Failed to save", Toast.LENGTH_SHORT).show()
                         deleteButton.isEnabled = true
                         cancelButton.isEnabled = true
-                        deleteButton.text = "Delete"
+                        deleteButton.text = "Again"
                     }
                 }
             }
@@ -217,4 +226,14 @@ class CallsAdapter(private val items: MutableList<CallListItem>) :
     }
 
     override fun getItemCount(): Int = items.size
+    private fun formatDuration(totalSeconds: Int): String {
+        val h = totalSeconds / 3600
+        val m = (totalSeconds % 3600) / 60
+        val s = totalSeconds % 60
+        return when {
+            h > 0 -> "${h}h ${m}m ${s}s"
+            m > 0 -> "${m}m ${s}s"
+            else -> "${s}s"
+        }
+    }
 }
