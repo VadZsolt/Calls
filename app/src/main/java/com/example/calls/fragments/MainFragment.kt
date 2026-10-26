@@ -14,6 +14,7 @@ import com.example.calls.services.CallSyncService
 import com.google.android.material.switchmaterial.SwitchMaterial
 import android.widget.TextView
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.example.calls.activities.ReadCallbacksActivity
@@ -96,6 +97,13 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     override fun onResume() {
         super.onResume()
         updateLastUploadText()
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Optional: restore previous orientation when leaving the fragment
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     private fun updateLastUploadText() {

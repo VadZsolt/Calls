@@ -1,6 +1,7 @@
 package com.example.calls.fragments
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -28,5 +29,16 @@ class CallsFragment : Fragment(R.layout.fragment_calls) {
         view.findViewById<View>(R.id.btnUploaderStats).setOnClickListener {
             startActivity(Intent(requireContext(), StatsActivity::class.java))
         }
+    }
+    override fun onResume() {
+        super.onResume()
+        // Lock to portrait
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Optional: restore previous orientation when leaving the fragment
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 }
