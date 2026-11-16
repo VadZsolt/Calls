@@ -91,7 +91,9 @@ class ReadCallbacksActivity : AppCompatActivity() {
                             obj.getString("Type"),
                             obj.optString("Uploader", ""),
                             Names = names,
-                            obj.optString("Observation", "")
+                            obj.optString("Observation", ""),
+                            obj.optString("Comment", "")
+
                         )
                     )
                 }
@@ -152,7 +154,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
             var observation: String? = null,
             var uploader: String? = null,
             var id: String? = null,
-            var assignee: String? = null
+            var assignee: String? = null,
+            var comment: String? = null
         )
 
         val byNumber = mutableMapOf<String, Tracker>()
@@ -164,6 +167,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
             val callId = call.Id ?: continue
             val observation = call.Observation ?: continue
             val uploader = call.Uploader ?: continue
+            val comment = call.Comment ?: continue
 
             val tracker = byNumber.getOrPut(number) { Tracker() }
 
@@ -175,6 +179,7 @@ class ReadCallbacksActivity : AppCompatActivity() {
                 if (tracker.lastMissedDate == null || date > tracker.lastMissedDate!!) {
                     tracker.lastMissedDate = date
                     tracker.lastMissedType = type
+                    tracker.comment = comment
                     tracker.name = call.Name ?: tracker.name
                     tracker.names = call.Names.ifEmpty { tracker.names }
                     tracker.resolved = false
@@ -217,7 +222,8 @@ class ReadCallbacksActivity : AppCompatActivity() {
                     Type = tracker.lastMissedType,
                     Uploader = tracker.uploader,
                     Names = tracker.names,
-                    Observation = tracker.observation
+                    Observation = tracker.observation,
+                    Comment = tracker.comment
                 )
             )
         }

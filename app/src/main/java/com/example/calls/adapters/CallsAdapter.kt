@@ -85,10 +85,14 @@ class CallsAdapter(private val items: MutableList<CallListItem>, private val sho
         }
 
         if (!call.Comment.isNullOrBlank()) {
-            holder.tvObservation.text = "📝 ${call.Observation}" + "| ${call.Comment}"
+            holder.tvObservation.text = "📝 ${call.Observation}" + " || ${call.Comment}"
             holder.tvObservation.visibility = View.VISIBLE
         } else {
             holder.tvObservation.visibility = View.GONE
+        }
+        if(!call.Observation.isNullOrBlank()){
+            holder.tvObservation.text = "📝 ${call.Observation}" + " || ${call.Comment}"
+            holder.tvObservation.visibility = View.VISIBLE
         }
 
         val colorRes = when (call.Type) {

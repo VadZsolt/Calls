@@ -20,6 +20,7 @@ import com.example.calls.activities.WriteActivity
 import com.example.calls.data.SyncPreferences
 import com.example.calls.fragments.CallsFragment
 import com.example.calls.sync.CallUploader
+import com.example.calls.sync.PresenceReporter
 import com.example.calls.sync.SyncResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +44,8 @@ class CallSyncService : Service() {
     private var lastNotificationText = "Watching for new calls..."
     private var lastSyncFailed = false
     private var isSyncing = false
+
+    private var presenceName: String? = null
 
     companion object {
         const val CHANNEL_ID = "call_sync_channel"
@@ -117,6 +120,19 @@ class CallSyncService : Service() {
             contentObserver
         )
 
+        serviceScope.launch {
+            presenceName = SyncPreferences.getUploaderName(this@CallSyncService).first()
+                ?.takeIf { it.isNotBlank() }
+
+            presenceName?.let { PresenceReporter.send(applicationContext, it, true) }
+
+            // Heartbeat: refresh the date every 15 minutes while running
+            while (isActive) {
+                delay(30 * 60 * 1000L)
+                presenceName?.let { PresenceReporter.send(applicationContext, it, true) }
+            }
+        }
+
         triggerSync()
         startVerifier()
     }
@@ -166,6 +182,7 @@ class CallSyncService : Service() {
         unregisterReceiver(dismissReceiver)
         unregisterReceiver(stopReceiver)
         unregisterReceiver(refreshReceiver)
+        presenceName?.let { PresenceReporter.send(applicationContext, it, false) }
         serviceScope.coroutineContext[Job]?.cancel()
     }
 
